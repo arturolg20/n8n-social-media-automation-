@@ -1,99 +1,124 @@
-# n8n-social-media-automation-
-AI-powered social media content generation and publishing automation built with n8n, APIs and webhooks.
+# n8n Social Media Automation
 
-## Project Context
+AI-powered content generation, review and publishing workflows built with n8n, OpenAI, WordPress REST API and webhooks.
 
-This workflow is not intended to be used as a standalone automation.
+This repository contains modular n8n workflows designed to work together as the automation backend of a custom web application.
 
-It was designed as the backend automation for a custom web application where users can generate AI-powered content through a graphical interface.
+---
 
-The web application collects all publication settings (language, tone, target audience, platform-specific options, image preferences, etc.) and sends them to this workflow through a webhook.
+# Project Context
 
-The workflow then:
+These workflows are not intended to be used as standalone automations.
+
+They were designed as the backend automation layer of a custom web application where users can generate, review and publish AI-powered content through a graphical interface.
+
+The web application collects all publication settings, such as:
+
+- Language
+- Tone
+- Target audience
+- Platform-specific options
+- SEO information
+- Image preferences
+
+and sends them to the appropriate workflow through webhooks.
+
+The automation then:
 
 - Generates AI-powered content.
-- Generates an AI image.
-- Uploads the image to WordPress Media Library.
-- Uses the uploaded WordPress media as the canonical image for all supported social media platforms.
-- Creates platform-specific versions of the content.
-- Stores the generated draft in a Data Table for review before publication.
+- Generates AI images.
+- Uploads the generated image to the WordPress Media Library.
+- Uses the uploaded WordPress media as the canonical image for every supported social media platform.
+- Creates platform-specific content.
+- Stores review sessions inside n8n Data Tables.
+- Allows regenerating text or images before publication.
+- Publishes approved content (Workflow 3).
 
-This architecture avoids generating duplicate images for every platform and ensures that all social networks reference the same uploaded media asset.
+This architecture avoids generating duplicate images for every platform while ensuring that every social network references the same media asset.
 
-This repository only contains the automation workflow. The frontend application is developed separately.
-
-# AI Social Media Content Generation Workflow (Workflow 1)
-
-## Overview
-
-This n8n workflow automates the generation of AI-powered social media content and prepares it for review before publication.
-
-Instead of publishing content directly, the workflow creates a complete draft, generates an accompanying image, organizes platform-specific versions, and stores everything in a Data Table for later review or approval.
-
-This workflow is designed to be the first step of a larger three-workflow automation system.
+The frontend application is developed separately and communicates with these workflows through webhooks.
 
 ---
 
-## Features
+# Current Workflows
 
-- Receives requests through a Webhook
-- Generates AI-powered content
-- Creates AI-generated images
-- Validates article length
-- Automatically retries generation if validation fails
-- Creates WordPress categories when needed
-- Creates WordPress tags automatically
-- Generates platform-specific versions:
-  - WordPress
-  - LinkedIn
-  - X (Twitter)
-  - Facebook
-  - Instagram
-- Stores every generated draft in an n8n Data Table
-- Returns the generated content through the webhook response
-- Designed to integrate with a custom web application
-- Uploads the generated image once to WordPress and reuses the same media asset across multiple social platforms
+## Workflow 1 — Content Generation
 
----
+Responsible for generating complete multi-platform content.
 
-## Workflow Architecture
+Main responsibilities:
 
-Webhook
-↓
+- Generate AI content
+- Generate AI image
+- Upload image to WordPress
+- Generate platform-specific versions
+- Store draft into Data Table
+- Create review session
 
-Input Mapping
-↓
+File:
 
-AI Content Generation
-↓
-
-Content Validation
-↓
-
-Generate AI Image
-↓
-
-Create Category (if needed)
-↓
-
-Create Tags
-
-↓
-
-Merge Content + Image
-↓
-
-Prepare Review Data
-↓
-
-Save Draft into Data Table
-↓
-
-Webhook Response
+```
+workflow-1-content-generation.json
+```
 
 ---
 
-## Technologies
+## Workflow 2 — Review & Regeneration
+
+Loads a previously generated draft and allows regenerating either the text or the image while preserving version history.
+
+Main responsibilities:
+
+- Load review session
+- Regenerate article
+- Regenerate image
+- Preserve previous versions
+- Update Data Table
+- Return updated content
+
+File:
+
+```
+workflow-2-review-regeneration.json
+```
+
+---
+
+## Workflow 3 — Publishing
+
+Coming soon.
+
+Responsible for publishing approved content to WordPress and supported social media platforms.
+
+---
+
+# Overall Architecture
+
+```text
+                 Custom Web Application
+                           │
+                           ▼
+                 Workflow 1
+          AI Content Generation
+                           │
+                           ▼
+            Draft stored in Data Table
+                           │
+                           ▼
+                 Workflow 2
+         Review & Regeneration
+                           │
+                           ▼
+                Approved Draft
+                           │
+                           ▼
+                 Workflow 3
+          Publishing & Distribution
+```
+
+---
+
+# Technologies
 
 - n8n
 - OpenAI
@@ -105,15 +130,15 @@ Webhook Response
 
 ---
 
-## Required Configuration
+# Required Configuration
 
-Before running the workflow, configure:
+Before running the workflows configure:
 
-### OpenAI
+## OpenAI
 
-Create an OpenAI credential and assign it to all Chat Model nodes.
+Create your own OpenAI credentials and assign them to every Chat Model node.
 
-### WordPress
+## WordPress
 
 Replace the placeholder endpoints:
 
@@ -123,13 +148,9 @@ https://example.com/wp-json/...
 
 with your own WordPress REST API endpoints.
 
-Configure authentication for:
+Configure authentication for every WordPress node.
 
-- Upload Image
-- Create Category
-- Create Tag
-
-### Data Table
+## Data Tables
 
 Create a Data Table named:
 
@@ -137,68 +158,79 @@ Create a Data Table named:
 content_sessions
 ```
 
-and select it in the **Insert Row** node.
+and select it inside the required Data Table nodes.
 
 ---
 
-## Example Webhook Request
+# Repository Structure
 
-POST
+```text
+n8n-social-media-automation/
 
-```json
-{
-  "titulo": "Benefits of AI Automation",
-  "descripcion": "Generate an article about AI automation.",
-  "category": "Artificial Intelligence",
-  "tags": "AI,Automation,n8n",
-  "idioma": "English",
-  "tamano": "Medium",
-  "tono": "Professional",
-  "publication_type": "Blog"
-}
+├── README.md
+├── workflow-1-content-generation.json
+├── workflow-2-review-regeneration.json
+├── screenshots/
+└── docs/
 ```
 
 ---
 
-## Example Response
+# Workflow Dependencies
 
-```json
-{
-  "success": true,
-  "session_id": "xxxxx",
-  "status": "pending_review",
-  "title": "...",
-  "content": "...",
-  "image": "...",
-  "category": "...",
-  "tags": [...]
-}
-```
+The workflows are designed to work together.
+
+Workflow 1 creates the review session.
+
+Workflow 2 loads that session and allows regenerating text or images while preserving version history.
+
+Workflow 3 will publish the approved content to WordPress and the configured social media platforms.
 
 ---
 
-## Repository Structure
+# System Design
 
-```
-workflow-1-content-generation.json
-README.md
-screenshots/
-```
+The workflows are intentionally separated into independent modules.
+
+This architecture provides several advantages:
+
+- Easier maintenance
+- Better scalability
+- Independent testing
+- Clear separation of responsibilities
+- Reusable automation components
+
+The custom frontend orchestrates the complete process by communicating with each workflow through dedicated webhooks.
 
 ---
 
-## Future Work
+# Roadmap
 
-This repository contains only **Workflow 1**.
-
-The complete automation is divided into three independent workflows:
+## Completed
 
 - Workflow 1 — AI Content Generation
 - Workflow 2 — Review & Regeneration
+
+## In Progress
+
 - Workflow 3 — Publishing & Distribution
 
 ---
 
-## License
+# Notes
+
+These workflows are provided as reusable templates.
+
+Before running them you must configure:
+
+- OpenAI credentials
+- WordPress credentials
+- Webhook URLs
+- Data Tables
+- Environment-specific settings
+
+---
+
+# License
 
 MIT
