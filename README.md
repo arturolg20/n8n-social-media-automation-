@@ -1,6 +1,27 @@
 # n8n-social-media-automation-
 AI-powered social media content generation and publishing automation built with n8n, APIs and webhooks.
 
+## Project Context
+
+This workflow is not intended to be used as a standalone automation.
+
+It was designed as the backend automation for a custom web application where users can generate AI-powered content through a graphical interface.
+
+The web application collects all publication settings (language, tone, target audience, platform-specific options, image preferences, etc.) and sends them to this workflow through a webhook.
+
+The workflow then:
+
+- Generates AI-powered content.
+- Generates an AI image.
+- Uploads the image to WordPress Media Library.
+- Uses the uploaded WordPress media as the canonical image for all supported social media platforms.
+- Creates platform-specific versions of the content.
+- Stores the generated draft in a Data Table for review before publication.
+
+This architecture avoids generating duplicate images for every platform and ensures that all social networks reference the same uploaded media asset.
+
+This repository only contains the automation workflow. The frontend application is developed separately.
+
 # AI Social Media Content Generation Workflow (Workflow 1)
 
 ## Overview
@@ -30,6 +51,8 @@ This workflow is designed to be the first step of a larger three-workflow automa
   - Instagram
 - Stores every generated draft in an n8n Data Table
 - Returns the generated content through the webhook response
+- Designed to integrate with a custom web application
+- Uploads the generated image once to WordPress and reuses the same media asset across multiple social platforms
 
 ---
 
