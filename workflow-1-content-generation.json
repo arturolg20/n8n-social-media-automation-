@@ -1,0 +1,2807 @@
+{
+  "name": "generación_publicaciones (workflow 1) webhook all platforms publicar git",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2160,
+        64
+      ],
+      "id": "50be7b5a-7a9e-4485-9f7b-2c189ff72165",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "url": "=https://image.pollinations.ai/prompt/{{ encodeURIComponent($json[\"text\"]) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        544,
+        -160
+      ],
+      "id": "78665e09-5ead-4c3e-88a5-281f8529fd0d",
+      "name": "PollinationsAI"
+    },
+    {
+      "parameters": {
+        "jsCode": "const media = $json;\n\nreturn [\n  {\n    json: {\n      featured_media_id: media.id,\n      image_url: media.source_url || media.guid?.rendered || media.guid?.raw || \"\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -160
+      ],
+      "id": "b5da31e8-1e5f-48cd-9555-31a644dd555b",
+      "name": "WP media"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bfacf8a7-0548-4384-939f-26d70a40c0ab",
+              "name": "session_id",
+              "value": "={{ $json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d846373f-76db-4426-8bd1-7f4b1ca426e5",
+              "name": "status",
+              "value": "pending_review",
+              "type": "string"
+            },
+            {
+              "id": "5d8278a7-de55-4072-8d38-5c7ddf3b4d57",
+              "name": "idioma",
+              "value": "={{ $json.idioma }}",
+              "type": "string"
+            },
+            {
+              "id": "b59fb814-ebe2-4269-9ad5-ac8d1da06f6e",
+              "name": "tamano",
+              "value": "={{ $json.tamano }}",
+              "type": "string"
+            },
+            {
+              "id": "22320357-51aa-4623-8181-3f5a94905ad3",
+              "name": "title_current",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "ff6857c2-e46a-49bd-a198-ec2578e859cc",
+              "name": "descripcion",
+              "value": "={{ $json.descripcion }}",
+              "type": "string"
+            },
+            {
+              "id": "da7d594c-6397-4e39-abe8-6c12a0dc978d",
+              "name": "content_current",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            },
+            {
+              "id": "9e3aba1f-8f64-47d8-93bf-bd0836d3c699",
+              "name": "image_current",
+              "value": "={{ $json.image_current }}",
+              "type": "string"
+            },
+            {
+              "id": "eea92e70-ebf7-4df9-94ed-72887131931a",
+              "name": "category_current",
+              "value": "={{$json.categories }}",
+              "type": "string"
+            },
+            {
+              "id": "e361ff81-1963-4e36-b2e5-c3f46adefcfa",
+              "name": "custom_category",
+              "value": "={{ $json.custom_category }}",
+              "type": "string"
+            },
+            {
+              "id": "f31517cf-696d-4921-9a25-3899c852e429",
+              "name": "tags_current",
+              "value": "={{ $json.tags }}",
+              "type": "array"
+            },
+            {
+              "id": "c8bba257-cdd7-4740-8ef3-360b99bd1293",
+              "name": "text_versions",
+              "value": "={{ JSON.stringify([\n  {\n    version: 1,\n    source: \"ai_initial\",\n    title: $json.title,\n    content: $json.content\n  }\n]) }}",
+              "type": "string"
+            },
+            {
+              "id": "2a5dbbb6-bb79-4200-9ed4-020d3f69e005",
+              "name": "image_versions",
+              "value": "={{ JSON.stringify([\n  {\n    version: 1,\n    source: \"ai_initial\",\n    image: $json.image_current, \n    image_id: $json.featured_media\n  }\n]) }}",
+              "type": "string"
+            },
+            {
+              "id": "83d2df38-7f72-4624-9e1c-4e80c9ed890a",
+              "name": "featured_media_id",
+              "value": "={{ $json.featured_media_id }}",
+              "type": "number"
+            },
+            {
+              "id": "3d625422-8fcc-45a2-b563-cfa13c23f795",
+              "name": "created_at",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "c275cb6d-75f0-497d-88a0-67f23b6da06d",
+              "name": "updated_at",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "c44e587a-548f-4a80-a501-e2976e8b99c0",
+              "name": "review_action",
+              "value": "none",
+              "type": "string"
+            },
+            {
+              "id": "7e242994-48b1-4e0c-b0fe-8ba7f959b176",
+              "name": "keyword_current",
+              "value": "={{ $json.keyword_current || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "d6f83609-e88d-477f-91b8-e6d09b72fb0d",
+              "name": "image_prompt_current",
+              "value": "={{ $json.image_prompt || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "73d62bbf-e6ae-440c-9995-fa20a7ede670",
+              "name": "objetivo",
+              "value": "={{ $json.objetivo || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "30881d25-d8d0-4d5c-9c50-db18e82361dd",
+              "name": "publico_objetivo",
+              "value": "={{ $json.publico_objetivo || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "a6741f34-b3ca-4540-b9a5-2875e8ebe0c8",
+              "name": "nivel_tecnico",
+              "value": "={{ $json.nivel_tecnico || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f89f8d96-1dea-4452-a223-ed341415fb78",
+              "name": "tono",
+              "value": "={{ $json.tono || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "4df7969b-fef1-416c-908d-622ab89620d1",
+              "name": "formato_texto",
+              "value": "={{ $json.formato_texto || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "89db01cb-e409-413a-9516-b19caa110ae7",
+              "name": "publication_type",
+              "value": "={{ $json.publication_type || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "a0b7f5fe-8f9a-4a16-a694-1baa3827f708",
+              "name": "cta",
+              "value": "={{ $json.cta }}",
+              "type": "string"
+            },
+            {
+              "id": "a82d140a-8de3-4d3b-b98d-c5cc744e43e2",
+              "name": "custom_cta",
+              "value": "={{ $json.custom_cta || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f8d14dc1-9e61-4861-9dfe-39b88325de95",
+              "name": "cta_intensity",
+              "value": "={{ $json.cta_intensity }}",
+              "type": "string"
+            },
+            {
+              "id": "137b8b7d-f6fa-4071-9647-ce87d1a02b4c",
+              "name": "visual_style",
+              "value": "={{ $json.visual_style }}",
+              "type": "string"
+            },
+            {
+              "id": "a44691dc-d0cd-4873-a1c5-ccdf62129792",
+              "name": "image_format",
+              "value": "={{ $json.image_format }}",
+              "type": "string"
+            },
+            {
+              "id": "606feeb9-74ea-4d6b-a748-551cd0cd7f1c",
+              "name": "visual_reference",
+              "value": "={{ $json.visual_reference || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "02c5b798-02d0-44fd-bbfc-1a9663babd30",
+              "name": "storytelling_format",
+              "value": "={{ $json.storytelling_format === true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "c751698b-5671-4a41-992e-4f12cd35b342",
+              "name": "viral_format",
+              "value": "={{ $json.viral_format === true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "bfc56efd-b82f-4c2b-ae13-62d9053a762e",
+              "name": "professional_linkedin_format",
+              "value": "={{ $json.professional_linkedin_format === true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "8d051edb-4d10-4034-b377-f32e01e9975b",
+              "name": "generate_image",
+              "value": "={{ $json.generate_image === true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "6e1ac641-31dd-4db9-bd1f-0acf43839bc6",
+              "name": "title_wordpress",
+              "value": "={{ $json.title_wordpress }}",
+              "type": "string"
+            },
+            {
+              "id": "d4e57b54-2ef0-4907-b07f-ac739298bb7f",
+              "name": "content_wordpress",
+              "value": "={{ $json.content_wordpress }}",
+              "type": "string"
+            },
+            {
+              "id": "c4a5b209-35c8-4402-9adf-8ac3d3a05ece",
+              "name": "tags_wordpress",
+              "value": "={{ $json.tags_wordpress }}",
+              "type": "string"
+            },
+            {
+              "id": "78c484a6-3d12-4e02-85e5-eb2fad94b3ad",
+              "name": "title_linkedin",
+              "value": "={{ $json.title_linkedin }}",
+              "type": "string"
+            },
+            {
+              "id": "78900385-d00f-4d33-9193-5c018cb42b9e",
+              "name": "content_linkedin",
+              "value": "={{ $json.content_linkedin }}",
+              "type": "string"
+            },
+            {
+              "id": "95fbbb61-62da-417e-9322-058628460615",
+              "name": "tags_linkedin",
+              "value": "={{ $json.tags_linkedin }}",
+              "type": "string"
+            },
+            {
+              "id": "95e7ba46-a5ac-42c9-bfef-44aef9382862",
+              "name": "title_x",
+              "value": "={{ $json.title_x }}",
+              "type": "string"
+            },
+            {
+              "id": "612724e7-3145-46f0-ade7-630dae3f45c2",
+              "name": "content_x",
+              "value": "={{ $json.content_x }}",
+              "type": "string"
+            },
+            {
+              "id": "b993de5d-c467-4969-9c60-460bfd5c2151",
+              "name": "tags_x",
+              "value": "={{ $json.tags_x }}",
+              "type": "string"
+            },
+            {
+              "id": "52f77297-0d5a-4b11-88e5-27d741c92f37",
+              "name": "title_facebook",
+              "value": "={{ $json.title_facebook }}",
+              "type": "string"
+            },
+            {
+              "id": "7fc3bf1c-3ffa-4b5b-80c0-2b96015e15a7",
+              "name": "content_facebook",
+              "value": "={{ $json.content_facebook }}",
+              "type": "string"
+            },
+            {
+              "id": "7daf3c8a-4f72-44f2-9441-1a5a7b6c59c9",
+              "name": "tags_facebook",
+              "value": "={{ $json.tags_facebook }}",
+              "type": "string"
+            },
+            {
+              "id": "39f07c44-b308-4d4b-9026-1df2c0130b21",
+              "name": "title_instagram",
+              "value": "={{ $json.title_instagram }}",
+              "type": "string"
+            },
+            {
+              "id": "59a34130-9aca-46a0-8499-573d2050e5fb",
+              "name": "content_instagram",
+              "value": "={{ $json.content_instagram }}",
+              "type": "string"
+            },
+            {
+              "id": "e965e9f2-f83e-4973-a823-e1911cb7bd1b",
+              "name": "tags_instagram",
+              "value": "={{ $json.tags_instagram }}",
+              "type": "string"
+            },
+            {
+              "id": "4cb21c96-1eb8-4cbe-9d9f-26c0d82c66ab",
+              "name": "image_source_url",
+              "value": "={{ $json.image_source_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3664,
+        64
+      ],
+      "id": "65049e3d-8ddc-488e-a6cf-504429c8dc47",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "## Block Generate Provisional Image via Prompt",
+        "height": 544,
+        "width": 1168
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        176,
+        -368
+      ],
+      "id": "0d4d4205-a3f9-4ad4-a02c-5e42204e9370",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Block Generate Provisional Post",
+        "height": 768,
+        "width": 1088
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        96,
+        176
+      ],
+      "id": "cd904879-bd1c-4454-8d4a-bbadfce1e969",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Validate Provisional Post\n\n\n\n\n\n\n\n\n**Cumple requisitos** \nEl formato y la longitud del artículo\ncumplen los requisitos del formulario inicial\n\n\n\n\n\n\n**No cumple los requisitos**\nLa longitud no cumple el requerimiento inicial\ndel formulario y se volverá a generar hasta\n3 veces para cumplir los requisitos.\nSi no lo logra, tocará pedir de nuevo en\nel formulario que se haga el artículo",
+        "height": 720,
+        "width": 496,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        688,
+        224
+      ],
+      "id": "7018b792-19f4-4e9b-9755-f4cb6f191fbc",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2928,
+        64
+      ],
+      "id": "b2a14b4f-3f89-4421-b9b1-d33da9bfcf66",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "content": "## Table\n-Podemos observar cuáles datos hemos recogido en la tabla\n- No requiere conectarse con ninguno de los workflows\n",
+        "height": 368,
+        "width": 720
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1952,
+        -624
+      ],
+      "id": "88995681-410a-4363-a4d1-f56a36ff6797",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.session_id }}",
+            "status": "={{ $json.status }}",
+            "title_current": "={{ $json.title_current }}",
+            "content_current": "={{ $json.content_current }}",
+            "image_current": "={{ $json.image_current }}",
+            "category_current": "={{ $json.category_current }}",
+            "tags_current": "={{ JSON.stringify($json.tags_current) }}",
+            "text_versions": "={{ $json.text_versions }}",
+            "image_versions": "={{ $json.image_versions }}",
+            "created_at": "={{ $json.created_at }}",
+            "updated_at": "={{ $json.updated_at }}",
+            "review_action": "={{ $json.review_action }}",
+            "featured_media_id": "={{ $json.featured_media_id }}",
+            "featured_media": "={{ $json.featured_media_id }}",
+            "keyword_current": "={{ $json.keyword_current }}",
+            "image_prompt_current": "={{ $json.image_prompt_current }}",
+            "publication_type": "={{ $json.publication_type }}",
+            "formato_texto": "={{ $json.formato_texto }}",
+            "tono": "={{ $json.tono }}",
+            "nivel_tecnico": "={{ $json.nivel_tecnico }}",
+            "publico_objetivo": "={{ $json.publico_objetivo }}",
+            "objetivo": "={{ $json.objetivo }}",
+            "visual_style": "={{ $json.visual_style }}",
+            "image_format": "={{ $json.image_format }}",
+            "visual_reference": "={{ $json.visual_reference }}",
+            "storytelling_format": "={{ $json.storytelling_format }}",
+            "viral_format": "={{ $json.viral_format }}",
+            "professional_linkedin_format": "={{ $json.professional_linkedin_format }}",
+            "cta": "={{ $json.cta }}",
+            "custom_cta": "={{ $json.custom_cta }}",
+            "cta_intensity": "={{ $json.cta_intensity }}",
+            "generate_image": "={{ $json.generate_image === true || $json.generate_image === \"true\" }}",
+            "idioma": "={{ $json.idioma }}",
+            "tamano": "={{ $json.tamano }}",
+            "custom_category": "={{ $json.custom_category }}",
+            "descripcion": "={{ $json.descripcion }}",
+            "title_wordpress": "={{ $json.title_wordpress }}",
+            "content_wordpress": "={{ $json.content_wordpress }}",
+            "tags_facebook": "={{ $json.tags_facebook }}",
+            "content_facebook": "={{ $json.content_facebook }}",
+            "title_facebook": "={{ $json.title_facebook }}",
+            "tags_instagram": "={{ $json.tags_instagram }}",
+            "content_instagram": "={{ $json.content_instagram }}\n",
+            "title_instagram": "={{ $json.title_instagram }}",
+            "tags_x": "={{ $json.tags_x }}",
+            "content_x": "={{ $json.content_x }}",
+            "title_x": "={{ $json.title_x }}",
+            "tags_linkedin": "={{ $json.tags_linkedin }}",
+            "content_linkedin": "={{ $json.content_linkedin }}",
+            "title_linkedin": "={{ $json.title_linkedin }}",
+            "tags_wordpress": "={{ $json.tags_wordpress }}",
+            "image_source_url": "={{ $json.image_source_url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_current",
+              "displayName": "title_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_current",
+              "displayName": "content_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "excerpt_current",
+              "displayName": "excerpt_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "meta_current",
+              "displayName": "meta_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category_current",
+              "displayName": "category_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "image_current",
+              "displayName": "image_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_current",
+              "displayName": "tags_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "text_versions",
+              "displayName": "text_versions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "image_versions",
+              "displayName": "image_versions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "review_action",
+              "displayName": "review_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "wp_post_id",
+              "displayName": "wp_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "wp_post_url",
+              "displayName": "wp_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "featured_media_id",
+              "displayName": "featured_media_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "featured_media",
+              "displayName": "featured_media",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "keyword_current",
+              "displayName": "keyword_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "image_prompt_current",
+              "displayName": "image_prompt_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "objetivo",
+              "displayName": "objetivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "publico_objetivo",
+              "displayName": "publico_objetivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "nivel_tecnico",
+              "displayName": "nivel_tecnico",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tono",
+              "displayName": "tono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "formato_texto",
+              "displayName": "formato_texto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "publication_type",
+              "displayName": "publication_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "visual_style",
+              "displayName": "visual_style",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "image_format",
+              "displayName": "image_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "visual_reference",
+              "displayName": "visual_reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "storytelling_format",
+              "displayName": "storytelling_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "viral_format",
+              "displayName": "viral_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "professional_linkedin_format",
+              "displayName": "professional_linkedin_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cta",
+              "displayName": "cta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "custom_cta",
+              "displayName": "custom_cta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cta_intensity",
+              "displayName": "cta_intensity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "generate_image",
+              "displayName": "generate_image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "idioma",
+              "displayName": "idioma",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tamano",
+              "displayName": "tamano",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "custom_category",
+              "displayName": "custom_category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "descripcion",
+              "displayName": "descripcion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_wordpress",
+              "displayName": "title_wordpress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_wordpress",
+              "displayName": "content_wordpress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_wordpress",
+              "displayName": "tags_wordpress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_linkedin",
+              "displayName": "title_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_linkedin",
+              "displayName": "content_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_linkedin",
+              "displayName": "tags_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_x",
+              "displayName": "title_x",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_x",
+              "displayName": "content_x",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_x",
+              "displayName": "tags_x",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_instagram",
+              "displayName": "title_instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_instagram",
+              "displayName": "content_instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_instagram",
+              "displayName": "tags_instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_facebook",
+              "displayName": "title_facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_facebook",
+              "displayName": "content_facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_facebook",
+              "displayName": "tags_facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "linkedin_post_id",
+              "displayName": "linkedin_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "facebook_post_id",
+              "displayName": "facebook_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "instagram_post_id",
+              "displayName": "instagram_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "x_post_id",
+              "displayName": "x_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "linkedin_post_url",
+              "displayName": "linkedin_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "facebook_post_url",
+              "displayName": "facebook_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "instagram_post_url",
+              "displayName": "instagram_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "x_post_url",
+              "displayName": "x_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "image_source_url",
+              "displayName": "image_source_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "optimizeBulk": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3824,
+        64
+      ],
+      "id": "af717b08-4065-4707-9e21-64b40da2b305",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "content": "## Block Create Category\n",
+        "height": 480,
+        "width": 832
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        176
+      ],
+      "id": "2daba4fe-bf44-43e0-9b06-de286bad0fd5",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Block Create Tags",
+        "height": 416,
+        "width": 704
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2336,
+        -112
+      ],
+      "id": "582b160b-3c9c-4853-8615-75412d820beb",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Block Prepare Post for Review & Publish\n",
+        "height": 416,
+        "width": 1088
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3056,
+        -112
+      ],
+      "id": "ffea73e9-c130-49e5-8a33-1a5928736a3f",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Merging Text-Image",
+        "height": 368
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        -80
+      ],
+      "id": "37dbd413-60fe-4df6-8bd3-f1a14eab0750",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-social-content",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        176
+      ],
+      "id": "7a84cd08-3a0e-40a9-b956-c8a6bc5b17c0",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f974e5c9-fd52-4b9d-8f0a-c0ef25717359",
+              "name": "idioma",
+              "value": "={{ $json.body.idioma }}",
+              "type": "string"
+            },
+            {
+              "id": "af3aa69f-a2de-4d9c-afeb-fa3c8929a1f8",
+              "name": "tamano",
+              "value": "={{ $json.body.tamano }}",
+              "type": "string"
+            },
+            {
+              "id": "03e1aa0e-c293-4386-bcbd-913184f80e2e",
+              "name": "titulo",
+              "value": "={{ $json.body.titulo }}",
+              "type": "string"
+            },
+            {
+              "id": "3b369b10-70de-44a4-bbc2-706aa220541a",
+              "name": "descripcion",
+              "value": "={{ $json.body.descripcion }}",
+              "type": "string"
+            },
+            {
+              "id": "17c29131-77f9-4243-912c-ae9438173736",
+              "name": "category",
+              "value": "={{ $json.body.category }}",
+              "type": "string"
+            },
+            {
+              "id": "829a7e2e-c7e5-4558-9186-0ddacfef313e",
+              "name": "custom_category",
+              "value": "={{ $json.body.custom_category }}",
+              "type": "string"
+            },
+            {
+              "id": "2cdb40a5-a149-44de-9151-10c46dbe4dc4",
+              "name": "tags",
+              "value": "={{ $json.body.tags }}",
+              "type": "string"
+            },
+            {
+              "id": "d31cf959-fd2e-4a97-873b-0493e9eaff5a",
+              "name": "keyword",
+              "value": "={{ $json.body.keyword }}",
+              "type": "string"
+            },
+            {
+              "id": "24d985da-9ab7-4021-942b-fc3be1b3cbe1",
+              "name": "tono",
+              "value": "={{ $json.body.tono }}",
+              "type": "string"
+            },
+            {
+              "id": "48939f87-9451-4f10-ab5b-9a0582ba14c5",
+              "name": "objetivo",
+              "value": "={{ $json.body.objetivo }}",
+              "type": "string"
+            },
+            {
+              "id": "755c6c06-a19f-4a34-9f52-29089e4bfc27",
+              "name": "publico_objetivo",
+              "value": "={{ $json.body.publico_objetivo }}",
+              "type": "string"
+            },
+            {
+              "id": "f9f7542b-5a47-4e52-ad4d-df8130710ee7",
+              "name": "nivel_tecnico",
+              "value": "={{ $json.body.nivel_tecnico }}",
+              "type": "string"
+            },
+            {
+              "id": "befca6bc-e018-4e21-aedb-c3f724359614",
+              "name": "formato_texto",
+              "value": "={{ $json.body.formato_texto }}",
+              "type": "string"
+            },
+            {
+              "id": "b489cc26-f33d-48a4-8e69-8e667c4a88d4",
+              "name": "cta",
+              "value": "={{ $json.body.cta }}",
+              "type": "string"
+            },
+            {
+              "id": "1e054a98-b3ea-430b-aabb-1baa5e664007",
+              "name": "custom_cta",
+              "value": "={{ $json.body.custom_cta }}",
+              "type": "string"
+            },
+            {
+              "id": "4233b2a2-ffdf-46af-8991-54dca50bb22b",
+              "name": "cta_intensity",
+              "value": "={{ $json.body.cta_intensity }}",
+              "type": "string"
+            },
+            {
+              "id": "80fcc316-d423-462c-b4c6-d9bb65b6638b",
+              "name": "generate_image",
+              "value": "={{ $json.body.generate_image }}",
+              "type": "boolean"
+            },
+            {
+              "id": "448bb951-a19a-4689-9844-f25e57c30d89",
+              "name": "visual_style",
+              "value": "={{ $json.body.visual_style }}",
+              "type": "string"
+            },
+            {
+              "id": "f216782b-5044-4d8f-a40d-51ada931fc40",
+              "name": "image_format",
+              "value": "={{ $json.body.image_format }}",
+              "type": "string"
+            },
+            {
+              "id": "ed1159f6-79f0-40a3-8a8d-a5f1fc8a5b49",
+              "name": "visual_reference",
+              "value": "={{ $json.body.visual_reference }}",
+              "type": "string"
+            },
+            {
+              "id": "90a29ba0-163a-48a1-a178-92ee828c36bb",
+              "name": "publication_type",
+              "value": "={{ $json.body.publication_type }}",
+              "type": "string"
+            },
+            {
+              "id": "ecf90ee5-07b4-44f5-a984-acaabcd09a7d",
+              "name": "storytelling_format",
+              "value": "={{ $json.body.storytelling_format }}",
+              "type": "boolean"
+            },
+            {
+              "id": "6b8e2441-b2a5-4bfe-90cc-11c5d8eb0b81",
+              "name": "viral_format",
+              "value": "={{ $json.body.viral_format }}",
+              "type": "boolean"
+            },
+            {
+              "id": "94b3f4e0-8b24-4337-96e0-6db21e658054",
+              "name": "professional_linkedin_format",
+              "value": "={{ $json.body.professional_linkedin_format }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -128,
+        176
+      ],
+      "id": "56ef6834-15a9-489b-a2c3-91df00efe121",
+      "name": "Map Input Data"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        4192,
+        64
+      ],
+      "id": "0f964b81-49a5-4413-a23f-f32640423000",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.all();\nconst article = $('Format').item.json;\n\nconst normalize = (s) =>\n  (s || \"\")\n    .toString()\n    .trim()\n    .toLowerCase()\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\");\n\nconst slugify = (s) =>\n  normalize(s)\n    .replace(/[^a-z0-9\\s-]/g, \"\")\n    .replace(/\\s+/g, \"-\")\n    .replace(/-+/g, \"-\")\n    .replace(/^-|-$/g, \"\");\n\nconst finalCategory = article.category || \"Sin categoría\";\nconst targetName = normalize(finalCategory);\nconst targetSlug = slugify(finalCategory);\n\nconst matchedCategory = results.find(item => {\n  const j = item.json || {};\n\n  return j.id && (\n    normalize(j.name) === targetName ||\n    normalize(j.slug) === targetSlug\n  );\n});\n\nconst baseData = {\n  ...article,\n  category: finalCategory,\n};\n\nif (matchedCategory) {\n  return [\n    {\n      json: {\n        ...baseData,\n        categoryId: Number(matchedCategory.json.id),\n        categoryName: matchedCategory.json.name || finalCategory,\n        exists: true,\n        categoryReady: true\n      },\n    },\n  ];\n}\n\nreturn [\n  {\n    json: {\n      ...baseData,\n      categoryId: null,\n      categoryName: finalCategory,\n      exists: false,\n      categoryReady: false\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        256
+      ],
+      "id": "59bbf6e3-3e46-4b07-a3eb-3c05e89a478d",
+      "name": "Check WP Category"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      categoryId: Number($json.categoryId),\n      categoryName: $json.categoryName || $json.category,\n      categoryReady: true\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        208
+      ],
+      "id": "60c812d9-df9a-4c04-bf11-850c4cd09c9d",
+      "name": "Category exists",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "29c669ad-4e41-433f-a343-bb062ec9a031",
+              "leftValue": "={{ $json.exists}}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1584,
+        256
+      ],
+      "id": "8dcabf99-0a75-4d40-9721-ff2e14983723",
+      "name": "Category exists?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0e1ea3c1-975b-45d4-8a09-1917248bb5fd",
+              "leftValue": "={{ $json.isValidLength }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "f1087d6d-d24b-491c-9141-646fd82fb5f3",
+              "leftValue": "={{ Number($json.retries ?? 0) }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        832,
+        272
+      ],
+      "id": "1ab5c304-d975-4c3e-9ad9-74ec0f1ee22c",
+      "name": "Validate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawOriginal =\n  $json.text ||\n  $json.output ||\n  $json.response ||\n  $json.message ||\n  $json.content ||\n  \"\";\n\nlet raw = String(rawOriginal)\n  .replace(/```json/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n\n  // Buscar el primer objeto JSON válido dentro del texto\n  const jsonMatch = raw.match(/\\{[\\s\\S]*\\}/);\n\n  if (!jsonMatch) {\n    throw new Error(\n      \"No se encontró JSON válido en la respuesta del LLM: \" +\n      raw.slice(0, 700)\n    );\n  }\n\n  try {\n    parsed = JSON.parse(jsonMatch[0]);\n  } catch (err) {\n    throw new Error(\n      \"El JSON del LLM no se pudo parsear: \" +\n      jsonMatch[0].slice(0, 700)\n    );\n  }\n}\n\nconst clean = (v) =>\n  v == null ? \"\" : String(v).trim();\n\nconst category = clean(\n  parsed.category ||\n  $json.category ||\n  $json.custom_category\n);\n\nconst keyword = clean(\n  parsed.keyword ||\n  $json.keyword\n);\n\nconst title_wordpress = clean(parsed.title_wordpress);\nconst content_wordpress = clean(parsed.content_wordpress);\n\nif (!title_wordpress) {\n  throw new Error(\n    \"Falta title_wordpress en el JSON del LLM.\"\n  );\n}\n\nif (!content_wordpress) {\n  throw new Error(\n    \"Falta content_wordpress en el JSON del LLM.\"\n  );\n}\n\nreturn [\n  {\n    json: {\n      ...$json,\n\n      // Compatibilidad con el flujo antiguo WP\n      title: title_wordpress,\n      content: content_wordpress,\n      tags: clean(parsed.tags_wordpress),\n\n      category,\n      keyword,\n\n      image_prompt: clean(parsed.image_prompt),\n\n      // =========================\n      // WORDPRESS\n      // =========================\n      title_wordpress,\n      content_wordpress,\n      tags_wordpress: clean(parsed.tags_wordpress),\n\n      // =========================\n      // LINKEDIN\n      // =========================\n      title_linkedin: clean(parsed.title_linkedin),\n      content_linkedin: clean(parsed.content_linkedin),\n      tags_linkedin: clean(parsed.tags_linkedin),\n\n      // =========================\n      // X / TWITTER\n      // =========================\n      title_x: clean(parsed.title_x),\n      content_x: clean(parsed.content_x),\n      tags_x: clean(parsed.tags_x),\n\n      // =========================\n      // FACEBOOK\n      // =========================\n      title_facebook: clean(parsed.title_facebook),\n      content_facebook: clean(parsed.content_facebook),\n      tags_facebook: clean(parsed.tags_facebook),\n\n      // =========================\n      // INSTAGRAM\n      // =========================\n      title_instagram: clean(parsed.title_instagram),\n      content_instagram: clean(parsed.content_instagram),\n      tags_instagram: clean(parsed.tags_instagram),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        256
+      ],
+      "id": "39b76a1c-04d8-430c-9f8f-96741d87824d",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "jsCode": "const article = $('Check WP Category').item.json;\nconst createResult = $json;\n\nconst normalize = (s) =>\n  (s || \"\")\n    .toString()\n    .trim()\n    .toLowerCase()\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\");\n\nconst slugify = (s) =>\n  normalize(s)\n    .replace(/[^a-z0-9\\s-]/g, \"\")\n    .replace(/\\s+/g, \"-\")\n    .replace(/-+/g, \"-\")\n    .replace(/^-|-$/g, \"\");\n\nconst finalCategory = article.categoryName || article.category || \"Sin categoría\";\n\n// Caso 1: se creó bien\nif (createResult.id) {\n  return [\n    {\n      json: {\n        ...article,\n        categoryId: Number(createResult.id),\n        categoryName: createResult.name || finalCategory,\n        categoryReady: true,\n        exists: true,\n      },\n    },\n  ];\n}\n\n// Caso 2: falló porque ya existía o no devolvió id\nconst searchResults = $('Create categories').all();\n\nconst targetName = normalize(finalCategory);\nconst targetSlug = slugify(finalCategory);\n\nconst matchedCategory = searchResults.find(item => {\n  const j = item.json || {};\n\n  return j.id && (\n    normalize(j.name) === targetName ||\n    normalize(j.slug) === targetSlug\n  );\n});\n\nif (matchedCategory) {\n  return [\n    {\n      json: {\n        ...article,\n        categoryId: Number(matchedCategory.json.id),\n        categoryName: matchedCategory.json.name || finalCategory,\n        categoryReady: true,\n        exists: true,\n      },\n    },\n  ];\n}\n\nthrow new Error(\n  `No se pudo obtener el ID de la categoría. category=\"${finalCategory}\". Resultados GET=${JSON.stringify(searchResults.map(i => i.json))}`\n);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        464
+      ],
+      "id": "2b99fc97-51c7-4144-8540-c5e89ad1c8d5",
+      "name": "Created & Sent Category"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $json;\n\nlet termId =\n  data.error?.additional_data?.[0]?.data?.term_id ||\n  data.error?.additional_data?.data?.term_id ||\n  data.error?.data?.term_id ||\n  data.data?.term_id ||\n  null;\n\nif (!termId && data.error?.message) {\n  const msg = String(data.error.message);\n\n  const match = msg.match(/\"term_id\"\\s*:\\s*(\\d+)/) ||\n                msg.match(/term_id[^0-9]+(\\d+)/);\n\n  if (match) {\n    termId = match[1];\n  }\n}\n\nif (!termId) {\n  throw new Error(`No se pudo recuperar term_id del tag existente: ${JSON.stringify(data)}`);\n}\n\nreturn {\n  json: {\n    tagId: Number(termId),\n    tagName: data.tagName || data.name || \"\",\n    tagSlug: data.tagSlug || data.slug || \"\",\n    tagReady: true,\n    existed: true\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        144
+      ],
+      "id": "130b814a-2dd8-4c98-b900-f370d8cbb235",
+      "name": "Code Error"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        464
+      ],
+      "id": "510c4ef4-1065-418f-ba28-9896b452b7e1",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Genera un prompt visual detallado para una imagen profesional basada en:\n\nTítulo: {{ $json.titulo }}\nDescripción: {{ $json.descripcion }}\nCategoría: {{ $json.category }}\nKeyword principal: {{ $json.keyword }}\nTono: {{ $json.tono }}\n\nRequisitos:\n- La imagen debe ser moderna, limpia y profesional\n- Estilo corporativo/tecnológico\n- Sin texto dentro de la imagen\n- Composición clara y atractiva\n- Iluminación cuidada\n- Estética relacionada con inteligencia artificial y negocio\n\nDevuelve SOLO el prompt de imagen en inglés, sin frases como \"Here is...\" ni explicaciones.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        224,
+        -240
+      ],
+      "id": "2fcc9e2e-f1f7-4b90-81d5-d1bd36319fb9",
+      "name": "Basic LLM Chain (image)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Actúa como un estratega senior de contenido, copywriter SEO, experto en growth marketing y especialista en contenido multicanal para redes sociales y plataformas digitales.\n\nTu objetivo es generar contenido altamente optimizado, persuasivo y adaptado específicamente a cada plataforma:\n\n- WordPress / Blog\n- LinkedIn\n- X (Twitter)\n- Facebook\n- Instagram\n\nCada plataforma debe tener:\n- título propio\n- contenido propio\n- hashtags propios\n- estructura optimizada\n- tono adaptado\n- longitud adecuada\n- CTA contextualizado\n\nNO reutilices exactamente el mismo texto entre plataformas.\n\n====================================================================\nDATOS RECIBIDOS\n====================================================================\n\nIdioma: {{ $json.idioma }}\nTamaño: {{ $json.tamano }}\n\nTítulo sugerido: {{ $json.titulo }}\nDescripción / contexto: {{ $json.descripcion }}\n\nCategoría principal: {{ $json.category }}\nCategoría personalizada: {{ $json.custom_category }}\n\nTags: {{ $json.tags }}\nKeyword principal SEO: {{ $json.keyword }}\n\nTono: {{ $json.tono }}\nObjetivo de publicación: {{ $json.objetivo }}\nPúblico objetivo: {{ $json.publico_objetivo }}\nNivel técnico del público: {{ $json.nivel_tecnico }}\n\nFormato del texto: {{ $json.formato_texto }}\n\nCTA seleccionado: {{ $json.cta }}\nCTA personalizado: {{ $json.custom_cta }}\nIntensidad CTA: {{ $json.cta_intensity }}\n\nGenerar imagen: {{ $json.generate_image }}\nEstilo visual: {{ $json.visual_style }}\nFormato imagen: {{ $json.image_format }}\nInspiración visual: {{ $json.visual_reference }}\n\nTipo de publicación: {{ $json.publication_type }}\n\nFormato storytelling: {{ $json.storytelling_format }}\nFormato viral: {{ $json.viral_format }}\nFormato LinkedIn profesional: {{ $json.professional_linkedin_format }}\n\n====================================================================\nREGLAS GENERALES\n====================================================================\n\n- Usa SIEMPRE el idioma indicado.\n- Adapta completamente el contenido al público objetivo.\n- Ajusta el nivel técnico según el valor recibido.\n- Si \"custom_category\" tiene valor, úsalo como categoría principal.\n- Si el título sugerido es débil o genérico, crea uno más potente.\n- La keyword principal debe aparecer naturalmente.\n- El contenido debe parecer escrito por un humano experto.\n- Evita clichés típicos de IA.\n- Evita relleno innecesario.\n- Usa lenguaje natural y persuasivo.\n- Maximiza retención, engagement y claridad.\n\n====================================================================\nOBJETIVO DEL CONTENIDO\n====================================================================\n\nOptimiza el enfoque según el objetivo:\n\n- Generar leads:\n  problemas + soluciones + autoridad + CTA\n\n- Autoridad:\n  enfoque experto y estratégico\n\n- Engagement:\n  preguntas, emoción e interacción\n\n- Viralidad:\n  hooks fuertes y ritmo rápido\n\n- Educación:\n  claridad, ejemplos y valor práctico\n\n- Conversión:\n  enfoque persuasivo y accionable\n\n====================================================================\nADAPTACIÓN POR PLATAFORMA\n====================================================================\n\n========================\nWORDPRESS / BLOG\n========================\n\n- Optimización SEO avanzada\n- Contenido largo y estructurado\n- Uso natural de keyword\n- Subtítulos claros\n- Formato tipo artículo profesional\n- Más profundidad técnica\n- Mayor valor educativo\n\nLONGITUD:\n\n- breve:\n  300-450 palabras\n\n- estandar:\n  600-900 palabras\n\n- extenso:\n  1200-1600 palabras\n\n- muy_extenso:\n  2000-3000 palabras\n\n========================\nLINKEDIN\n========================\n\n- Tono profesional y humano\n- Hook inicial fuerte\n- Storytelling estratégico\n- Párrafos cortos\n- Lectura escaneable\n- Reflexión profesional\n- Autoridad y credibilidad\n- CTA suave o estratégico\n\nLONGITUD:\nentre 800 y 2200 caracteres\n\n========================\nX / TWITTER\n========================\n\n- Ultra directo\n- Muy alto impacto\n- Viralizable\n- Frases cortas\n- Ritmo rápido\n- Máximo engagement\n- Puede usar mini-thread si es necesario\n- Priorizar claridad y punchline\n\nLONGITUD:\nmáximo 280 caracteres por tweet\nmáximo 6 tweets si haces hilo\n\n========================\nFACEBOOK\n========================\n\n- Conversacional\n- Cercano\n- Emocional\n- Fácil de leer\n- Mezcla storytelling + utilidad\n- Mayor interacción social\n- CTA moderado\n\nLONGITUD:\nentre 500 y 1500 caracteres\n\n========================\nINSTAGRAM\n========================\n\n- Muy visual\n- Emocional\n- Inspiracional\n- Frases cortas\n- Muy escaneable\n- Uso estratégico de emojis\n- CTA ligero\n- Orientado a caption\n\nLONGITUD:\nentre 400 y 2200 caracteres\n\n====================================================================\nFORMATO DEL TEXTO\n====================================================================\n\nInterpreta correctamente:\n\n- Con emojis:\n  emojis moderados y estratégicos\n\n- Lista de puntos:\n  listas visuales claras\n\n- Storytelling:\n  narrativa emocional o profesional\n\n- Viral:\n  hooks y ritmo dinámico\n\n- Professional LinkedIn:\n  estructura optimizada para LinkedIn\n\n====================================================================\nCTA\n====================================================================\n\n- Si CTA = Ninguno:\n  no fuerces conversión\n\n- Si existe custom_cta:\n  priorízalo\n\nIntensidad:\n- Baja → sutil\n- Media → equilibrada\n- Alta → persuasiva\n\n====================================================================\nIMAGEN / DIRECCIÓN CREATIVA\n====================================================================\n\nSi generate_image = true:\n\nGenera un IMAGE_PROMPT extremadamente detallado.\n\nDebe incluir:\n- composición\n- iluminación\n- ambiente\n- profundidad\n- estilo visual\n- tipo de escena\n- colores\n- referencias visuales\n- tipografía sugerida\n- sensación emocional\n- framing cinematográfico\n- estilo compatible con:\n  - MidJourney\n  - DALL·E\n  - Flux\n  - Stable Diffusion\n\n====================================================================\nFORMATO DE RESPUESTA OBLIGATORIO\n====================================================================\n\nIMPORTANTE:\n- Devuelve SOLO JSON válido.\n- NO uses markdown.\n- NO uses bloques de código.\n- NO añadas texto fuera del JSON.\n- Escapa correctamente comillas y saltos de línea.\n- Todos los campos deben existir.\n\n====================================================================\nJSON DE RESPUESTA\n====================================================================\n\n{\n  \"category\": \"\",\n  \"keyword\": \"\",\n\n  \"title_wordpress\": \"\",\n  \"content_wordpress\": \"\",\n  \"tags_wordpress\": \"\",\n\n  \"title_linkedin\": \"\",\n  \"content_linkedin\": \"\",\n  \"tags_linkedin\": \"\",\n\n  \"title_x\": \"\",\n  \"content_x\": \"\",\n  \"tags_x\": \"\",\n\n  \"title_facebook\": \"\",\n  \"content_facebook\": \"\",\n  \"tags_facebook\": \"\",\n\n  \"title_instagram\": \"\",\n  \"content_instagram\": \"\",\n  \"tags_instagram\": \"\",\n\n  \"image_prompt\": \"\"\n}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        112,
+        224
+      ],
+      "id": "86ba4a77-d464-4f79-8fb7-1dc2e22b4c85",
+      "name": "Basic LLM Chain (article)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=El siguiente contenido multicanal NO cumple la longitud requerida para WordPress.\n\n====================================================================\nDATOS ACTUALES\n====================================================================\n\nIdioma: {{ $json.idioma }}\n\nTamaño requerido: {{ $json.normalizedSize || $json.tamano }}\n\nLongitud actual WordPress: {{ $json.wordCount }} palabras\nLongitud mínima requerida: {{ $json.minWords }} palabras\n\nKeyword principal:\n{{ $json.keyword }}\n\nCategoría:\n{{ $json.category }}\n\nTags actuales:\n{{ $json.tags_wordpress || $json.tags }}\n\nTono:\n{{ $json.tono }}\n\nObjetivo:\n{{ $json.objetivo }}\n\nPúblico objetivo:\n{{ $json.publico_objetivo }}\n\nNivel técnico:\n{{ $json.nivel_tecnico }}\n\nFormato del texto:\n{{ $json.formato_texto }}\n\nCTA:\n{{ $json.cta }}\n\nCTA personalizado:\n{{ $json.custom_cta }}\n\nIntensidad CTA:\n{{ $json.cta_intensity }}\n\nFormato storytelling:\n{{ $json.storytelling_format }}\n\nFormato viral:\n{{ $json.viral_format }}\n\nFormato LinkedIn profesional:\n{{ $json.professional_linkedin_format }}\n\n====================================================================\nCONTENIDO ACTUAL\n====================================================================\n\n========================\nWORDPRESS\n========================\n\nTítulo:\n{{ $json.title_wordpress || $json.title }}\n\nContenido:\n{{ $json.content_wordpress || $json.content }}\n\n========================\nLINKEDIN\n========================\n\nTítulo:\n{{ $json.title_linkedin }}\n\nContenido:\n{{ $json.content_linkedin }}\n\n========================\nX / TWITTER\n========================\n\nTítulo:\n{{ $json.title_x }}\n\nContenido:\n{{ $json.content_x }}\n\n========================\nFACEBOOK\n========================\n\nTítulo:\n{{ $json.title_facebook }}\n\nContenido:\n{{ $json.content_facebook }}\n\n========================\nINSTAGRAM\n========================\n\nTítulo:\n{{ $json.title_instagram }}\n\nContenido:\n{{ $json.content_instagram }}\n\n====================================================================\nINSTRUCCIONES IMPORTANTES\n====================================================================\n\nLa versión actual de WordPress NO alcanzó el mínimo requerido.\n\nDEBES:\n\n- regenerar TODO el JSON multicanal completo\n- mantener coherencia temática entre plataformas\n- mantener la misma keyword y categoría\n- mantener el mismo enfoque general\n- conservar intención, tono y público objetivo\n\nPERO:\n\n- amplía significativamente content_wordpress\n- NO resumas el contenido actual\n- NO elimines secciones importantes\n- añade contenido nuevo de valor real\n\nEl nuevo content_wordpress DEBE incluir varios de estos elementos:\n\n- ejemplos reales\n- casos de uso\n- errores frecuentes\n- ventajas y desventajas\n- comparativas\n- análisis estratégico\n- recomendaciones accionables\n- reflexión final desarrollada\n\n====================================================================\nREGLAS WORDPRESS\n====================================================================\n\n- contenido profesional y SEO\n- estructura clara\n- múltiples secciones\n- subsecciones cuando corresponda\n- contenido profundo y útil\n- usar SOLO HTML\n- permitido:\n  <p>\n  <h2>\n  <h3>\n\nNO usar:\n\n- markdown\n- bloques de código\n- <h1>\n- texto fuera del JSON\n\nEl contenido debe comenzar con:\n- <p>\no\n- <h2>\n\nEl nuevo content_wordpress DEBE superar claramente:\n{{ $json.minWords }} palabras\n\n====================================================================\nREGLAS MULTICANAL\n====================================================================\n\nLinkedIn:\n- profesional\n- storytelling estratégico\n- lectura escaneable\n\nX:\n- impacto rápido\n- corto y viralizable\n\nFacebook:\n- cercano y conversacional\n\nInstagram:\n- visual\n- emocional\n- uso moderado de emojis\n\nNO copies exactamente el mismo contenido entre plataformas.\n\n====================================================================\nIMAGEN\n====================================================================\n\nMantén image_prompt coherente con el contenido ampliado.\n\n====================================================================\nFORMATO OBLIGATORIO\n====================================================================\n\nIMPORTANTE:\n\n- Devuelve SOLO JSON válido\n- NO uses markdown\n- NO uses ```json\n- NO añadas explicaciones\n- NO añadas texto fuera del JSON\n- Escapa correctamente saltos de línea y comillas\n- TODOS los campos deben existir\n\n====================================================================\nJSON OBLIGATORIO\n====================================================================\n\n{\n  \"category\": \"\",\n  \"keyword\": \"\",\n\n  \"title_wordpress\": \"\",\n  \"content_wordpress\": \"\",\n  \"tags_wordpress\": \"\",\n\n  \"title_linkedin\": \"\",\n  \"content_linkedin\": \"\",\n  \"tags_linkedin\": \"\",\n\n  \"title_x\": \"\",\n  \"content_x\": \"\",\n  \"tags_x\": \"\",\n\n  \"title_facebook\": \"\",\n  \"content_facebook\": \"\",\n  \"tags_facebook\": \"\",\n\n  \"title_instagram\": \"\",\n  \"content_instagram\": \"\",\n  \"tags_instagram\": \"\",\n\n  \"image_prompt\": \"\"\n}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1056,
+        704
+      ],
+      "id": "5e4d858a-8eb2-4d2a-bc7e-7bd1cc17bb26",
+      "name": "Basic LLM Chain (regenerate)"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        800
+      ],
+      "id": "6ce5ec13-6cd4-4695-bb89-8e05a96d0eff",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        -48
+      ],
+      "id": "6778cf16-7374-4913-88cb-7ac37f6f296f",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.example.com/wp-json/wp/v2/media",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\",\n  \"User-Agent\": \"Mozilla/5.0\",\n  \"Content-Disposition\": \"attachment; filename=\\\"ai-image.jpg\\\"\"\n}",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        800,
+        -160
+      ],
+      "id": "a3896e17-0518-45ee-958d-d2ad5809ded8",
+      "name": "Upload Image",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=https://www.example.com/wp-json/wp/v2/categories",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "search",
+              "value": "={{ $json.category }}"
+            },
+            {
+              "name": "per_page",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\",\n  \"Content-Type\": \"application/json\",\n  \"User-Agent\": \"Mozilla/5.0\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1232,
+        256
+      ],
+      "id": "785aa306-e380-4d22-a152-df93f5b93d18",
+      "name": "Create categories",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.example.com/wp-json/wp/v2/categories",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\",\n  \"Content-Type\": \"application/json\",\n  \"User-Agent\": \"Mozilla/5.0\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.category }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1728,
+        400
+      ],
+      "id": "b74cdbca-90d6-4736-a8c6-308127d5428f",
+      "name": "Create category",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.example.com/wp-json/wp/v2/tags",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\",\n  \"Content-Type\": \"application/json\",\n  \"User-Agent\": \"Mozilla/5.0\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{$json.tagName}}"
+            },
+            {
+              "name": "slug",
+              "value": "={{$json.tagName\n  .toLowerCase()\n  .normalize(\"NFD\")\n  .replace(/[\\u0300-\\u036f]/g, \"\")\n  .replace(/\\s+/g, \"-\")\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2496,
+        64
+      ],
+      "id": "d8febe39-0e66-4e35-aa7f-3bd215c097cc",
+      "name": "Create tag",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "Content_sessions",
+        "columns": {
+          "column": [
+            {
+              "name": "session_id"
+            },
+            {
+              "name": "status"
+            },
+            {
+              "name": "title_current"
+            },
+            {
+              "name": "content_current"
+            },
+            {
+              "name": "excerpt_current"
+            },
+            {
+              "name": "meta_current"
+            },
+            {
+              "name": "category_current"
+            },
+            {
+              "name": "image_current"
+            },
+            {
+              "name": "tags_current"
+            },
+            {
+              "name": "text_versions"
+            },
+            {
+              "name": "image_versions"
+            },
+            {
+              "name": "created_at",
+              "type": "date"
+            },
+            {
+              "name": "updated_at",
+              "type": "date"
+            },
+            {
+              "name": "review_action"
+            },
+            {
+              "name": "wp_post_id"
+            },
+            {
+              "name": "wp_post_url"
+            },
+            {
+              "name": "featured_media_id",
+              "type": "number"
+            },
+            {
+              "name": "featured_media",
+              "type": "number"
+            },
+            {
+              "name": "keyword_current"
+            },
+            {
+              "name": "image_prompt_current"
+            },
+            {
+              "name": "objetivo"
+            },
+            {
+              "name": "publico_objetivo"
+            },
+            {
+              "name": "nivel_tecnico"
+            },
+            {
+              "name": "tono"
+            },
+            {
+              "name": "formato_texto"
+            },
+            {
+              "name": "publication_type"
+            },
+            {
+              "name": "visual_style"
+            },
+            {
+              "name": "image_format"
+            },
+            {
+              "name": "visual_reference"
+            },
+            {
+              "name": "storytelling_format"
+            },
+            {
+              "name": "viral_format"
+            },
+            {
+              "name": "professional_linkedin_format"
+            },
+            {
+              "name": "cta"
+            },
+            {
+              "name": "custom_cta"
+            },
+            {
+              "name": "cta_intensity"
+            },
+            {
+              "name": "generate_image",
+              "type": "boolean"
+            },
+            {
+              "name": "idioma"
+            },
+            {
+              "name": "tamano"
+            },
+            {
+              "name": "custom_category"
+            },
+            {
+              "name": "descripcion"
+            },
+            {
+              "name": "title_wordpress"
+            },
+            {
+              "name": "content_wordpress"
+            },
+            {
+              "name": "tags_wordpress"
+            },
+            {
+              "name": "title_linkedin"
+            },
+            {
+              "name": "content_linkedin"
+            },
+            {
+              "name": "tags_linkedin"
+            },
+            {
+              "name": "title_x"
+            },
+            {
+              "name": "content_x"
+            },
+            {
+              "name": "tags_x"
+            },
+            {
+              "name": "title_instagram"
+            },
+            {
+              "name": "content_instagram"
+            },
+            {
+              "name": "tags_instagram"
+            },
+            {
+              "name": "title_facebook"
+            },
+            {
+              "name": "content_facebook"
+            },
+            {
+              "name": "tags_facebook"
+            },
+            {
+              "name": "linkedin_post_id"
+            },
+            {
+              "name": "facebook_post_id"
+            },
+            {
+              "name": "instagram_post_id"
+            },
+            {
+              "name": "x_post_id"
+            },
+            {
+              "name": "linkedin_post_url"
+            },
+            {
+              "name": "facebook_post_url"
+            },
+            {
+              "name": "instagram_post_url"
+            },
+            {
+              "name": "x_post_url"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2272,
+        -464
+      ],
+      "id": "cbd40a6f-6a39-42d3-96eb-13bce8d4f858",
+      "name": "Content_sessions"
+    },
+    {
+      "parameters": {
+        "jsCode": "const retries = ($json.retries || 0) + 1;\n\nreturn {\n  json: {\n    ...$json,\n    retries\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        400
+      ],
+      "id": "b34419ee-c7f4-4e9d-982b-629bfafc6eec",
+      "name": "Increment Retry Count"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nlet rawTags = [];\n\n// PRIORIDAD: tags WordPress\nif (\n  Array.isArray(data.tags_wordpress) &&\n  data.tags_wordpress.length > 0\n) {\n  rawTags = data.tags_wordpress;\n\n} else if (\n  typeof data.tags_wordpress === \"string\" &&\n  data.tags_wordpress.trim()\n) {\n  rawTags = data.tags_wordpress.split(/[,]+|\\s+(?=#)/);\n\n// FALLBACK: tags antiguos\n} else if (\n  Array.isArray(data.tags) &&\n  data.tags.length > 0\n) {\n  rawTags = data.tags;\n\n} else if (\n  typeof data.tags === \"string\" &&\n  data.tags.trim()\n) {\n  rawTags = data.tags.split(/[,]+|\\s+(?=#)/);\n}\n\n// FALLBACK automático\nif (!rawTags.length) {\n  rawTags = [\n    data.keyword,\n    data.categoryName || data.category\n  ];\n}\n\n// Limpiar tags\nconst cleanTags = rawTags\n  .map(tag => String(tag || \"\").trim())\n  .map(tag => tag.replace(/^#/, \"\"))\n  .map(tag => tag.trim())\n  .filter(Boolean)\n  .filter((tag, index, arr) =>\n    arr.findIndex(\n      t => t.toLowerCase() === tag.toLowerCase()\n    ) === index\n  );\n\n// Crear items separados para cada tag\nreturn cleanTags.map(tag => ({\n  json: {\n    ...data,\n    tagName: tag\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        64
+      ],
+      "id": "15a5e456-8c36-4839-83db-c21599e1023f",
+      "name": "Separate tags"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst tagIds = items\n  .map(i => Number(i.json.tagId))\n  .filter(Boolean);\n\nconst tagNames = items\n  .map(i => i.json.tagName)\n  .filter(Boolean);\n\nreturn [\n  {\n    json: {\n      tagIds,\n      tagNames,\n      tagsReady: tagIds.length > 0\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        64
+      ],
+      "id": "b9ed1fba-b029-4b09-bca1-318023202569",
+      "name": "Collect Tag IDs"
+    },
+    {
+      "parameters": {
+        "jsCode": "const current = $json;\nconst base = $('Merge').first().json;\nconst original = $('Map Input Data').first().json;\n\nconst tagIds = Array.isArray(current.tagIds)\n  ? current.tagIds.map(Number).filter(Boolean)\n  : [];\n\nconst tagNames = Array.isArray(current.tagNames)\n  ? current.tagNames.filter(Boolean)\n  : [];\n\nreturn [\n  {\n    json: {\n      ...original,\n      ...base,\n      ...current,\n\n      title: base.title || base.title_wordpress || original.titulo || \"\",\n      content: base.content || base.content_wordpress || \"\",\n\n      category: base.category || original.category || \"\",\n      categoryId: Number(base.categoryId || current.categoryId || 0),\n\n      keyword: base.keyword || original.keyword || \"\",\n\n      featured_media_id: Number(base.featured_media_id || 0),\n      image_url: base.image_url || \"\",\n      image_prompt: base.image_prompt || \"\",\n\n      idioma: base.idioma || original.idioma || \"\",\n      tamano: base.tamano || original.tamano || \"\",\n      descripcion: base.descripcion || original.descripcion || \"\",\n      custom_category: base.custom_category || original.custom_category || \"\",\n\n      objetivo: base.objetivo || original.objetivo || \"\",\n      publico_objetivo: base.publico_objetivo || original.publico_objetivo || \"\",\n      nivel_tecnico: base.nivel_tecnico || original.nivel_tecnico || \"\",\n\n      tono: base.tono || original.tono || \"\",\n      formato_texto: base.formato_texto || original.formato_texto || \"\",\n\n      cta: base.cta || original.cta || \"\",\n      custom_cta: base.custom_cta || original.custom_cta || \"\",\n      cta_intensity: base.cta_intensity || original.cta_intensity || \"\",\n\n      publication_type: base.publication_type || original.publication_type || \"\",\n\n      visual_style: base.visual_style || original.visual_style || \"\",\n      image_format: base.image_format || original.image_format || \"\",\n      visual_reference: base.visual_reference || original.visual_reference || \"\",\n\n      storytelling_format: base.storytelling_format ?? original.storytelling_format ?? false,\n      viral_format: base.viral_format ?? original.viral_format ?? false,\n      professional_linkedin_format:\n        base.professional_linkedin_format ??\n        original.professional_linkedin_format ??\n        false,\n\n      generate_image: base.generate_image ?? original.generate_image ?? false,\n\n      title_wordpress: base.title_wordpress || base.title || \"\",\n      content_wordpress: base.content_wordpress || base.content || \"\",\n      tags_wordpress: base.tags_wordpress || base.tags || tagNames,\n\n      title_linkedin: base.title_linkedin || \"\",\n      content_linkedin: base.content_linkedin || \"\",\n      tags_linkedin: base.tags_linkedin || \"\",\n\n      title_x: base.title_x || \"\",\n      content_x: base.content_x || \"\",\n      tags_x: base.tags_x || \"\",\n\n      title_facebook: base.title_facebook || \"\",\n      content_facebook: base.content_facebook || \"\",\n      tags_facebook: base.tags_facebook || \"\",\n\n      title_instagram: base.title_instagram || \"\",\n      content_instagram: base.content_instagram || \"\",\n      tags_instagram: base.tags_instagram || \"\",\n\n      tagIds,\n      tagNames,\n      tagsReady: tagIds.length > 0\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        64
+      ],
+      "id": "90f2f03d-d6e1-4bc8-a7e3-8301f9dbd4c2",
+      "name": "Merge Tag Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8cab253a-24e4-4596-8adf-91642d733ea4",
+              "name": "=success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "e8c4197f-f603-488b-8888-c34e63cb8d17",
+              "name": "=session_id",
+              "value": "={{ $json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "8b861e40-c739-4d3f-b021-834ba454d980",
+              "name": "=status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "95cdee86-caad-41d6-b485-a4c9ae1d33fe",
+              "name": "=title",
+              "value": "={{ $json.title_current }}",
+              "type": "string"
+            },
+            {
+              "id": "e18abc3b-98fa-4b2d-95d9-24fbf3c197b3",
+              "name": "=content",
+              "value": "={{ $json.content_current }}",
+              "type": "string"
+            },
+            {
+              "id": "59109097-22f9-48fd-b384-1d11e3dba879",
+              "name": "=excerpt",
+              "value": "={{ $json.excerpt_current }}",
+              "type": "string"
+            },
+            {
+              "id": "d2e07c0c-e021-4dd2-8063-bf1a98c14e06",
+              "name": "=meta",
+              "value": "={{ $json.meta_current }}",
+              "type": "string"
+            },
+            {
+              "id": "31a701f6-09d8-491b-8d3f-9a687db44923",
+              "name": "=category",
+              "value": "={{ $json.category_current }}",
+              "type": "array"
+            },
+            {
+              "id": "7b0b7cbd-d599-4903-b917-0942e5f9d014",
+              "name": "=image",
+              "value": "={{ $json.image_current }}",
+              "type": "string"
+            },
+            {
+              "id": "2f57a714-8a25-49c2-b59a-cfc455dab9dd",
+              "name": "=tags",
+              "value": "={{ $json.tags_current }}",
+              "type": "array"
+            },
+            {
+              "id": "28e033b2-406e-4dc9-8ab8-92e4bd6f6703",
+              "name": "featured_media_id",
+              "value": "={{ $json.featured_media_id }}",
+              "type": "number"
+            },
+            {
+              "id": "2739eb96-0ab4-4038-8759-dc4e0ced51b6",
+              "name": "featured_media",
+              "value": "={{ $json.featured_media_id }}",
+              "type": "number"
+            },
+            {
+              "id": "6eec24bc-761d-4652-8c8e-2ec14a159686",
+              "name": "publication_type",
+              "value": "={{ $json.publication_type }}",
+              "type": "string"
+            },
+            {
+              "id": "32cf4e66-e5b1-4cb0-916d-e2aac9c52f17",
+              "name": "formato_texto",
+              "value": "={{ $json.formato_texto }}",
+              "type": "string"
+            },
+            {
+              "id": "056bd8ad-bcae-40ee-8fdd-e88bcacba701",
+              "name": "tono",
+              "value": "={{ $json.tono }}",
+              "type": "string"
+            },
+            {
+              "id": "4451be12-d047-4bbe-9f7e-8af766032ec8",
+              "name": "objetivo",
+              "value": "={{ $json.objetivo }}",
+              "type": "string"
+            },
+            {
+              "id": "2dc355b1-cacd-4b93-947c-f899c1b00adc",
+              "name": "publico_objetivo",
+              "value": "={{ $json.publico_objetivo }}",
+              "type": "string"
+            },
+            {
+              "id": "ac8ed4e3-6b0d-4d88-92e3-71af450f5fe5",
+              "name": "nivel_tecnico",
+              "value": "={{ $json.nivel_tecnico }}",
+              "type": "string"
+            },
+            {
+              "id": "d4241ec4-3a62-4d71-88e5-80c941821b73",
+              "name": "keyword_current",
+              "value": "={{ $json.keyword_current }}",
+              "type": "string"
+            },
+            {
+              "id": "c60751a5-4df3-4269-bfb9-5d83841f816c",
+              "name": "image_prompt_current",
+              "value": "={{ $json.image_prompt_current }}",
+              "type": "string"
+            },
+            {
+              "id": "96bbdc54-5324-489d-98b4-d2982fbb24af",
+              "name": "visual_style",
+              "value": "={{ $json.visual_style }}",
+              "type": "string"
+            },
+            {
+              "id": "8e2b83b7-4a12-47e2-a857-ca028dc7f31a",
+              "name": "image_format",
+              "value": "={{ $json.image_format }}",
+              "type": "string"
+            },
+            {
+              "id": "bb345c85-3516-4eb8-a0ee-ec96075d68d7",
+              "name": "visual_reference",
+              "value": "={{ $json.visual_reference }}",
+              "type": "string"
+            },
+            {
+              "id": "38e4939a-3a9a-416f-8030-ee7ec1badbd8",
+              "name": "storytelling_format",
+              "value": "={{ Boolean($json.storytelling_format) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "42c500ac-5138-4d0c-8431-73dd66adf856",
+              "name": "viral_format",
+              "value": "={{ Boolean($json.viral_format) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "9118d9e5-f3fe-4e54-994f-76e681dbe7b9",
+              "name": "professional_linkedin_format",
+              "value": "={{ Boolean($json.professional_linkedin_format) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "01c73bd7-d613-4376-9940-a8caf61daa28",
+              "name": "generate_image",
+              "value": "={{ Boolean($json.generate_image) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "8d8ac0b1-14a3-43cc-a9cf-49ef3b18ba29",
+              "name": "cta",
+              "value": "={{ $json.cta }}",
+              "type": "string"
+            },
+            {
+              "id": "a33d1db4-708b-4f71-a2e4-e679343f950a",
+              "name": "custom_cta",
+              "value": "={{ $json.custom_cta }}",
+              "type": "string"
+            },
+            {
+              "id": "e2d28780-078b-4e34-8f62-9c8f2f5f88ea",
+              "name": "cta_intensity",
+              "value": "={{ $json.cta_intensity }}",
+              "type": "string"
+            },
+            {
+              "id": "eee169fc-5deb-44a2-8a8f-75380b27b786",
+              "name": "review_action",
+              "value": "={{ $json.review_action }}",
+              "type": "string"
+            },
+            {
+              "id": "fd8a9a2c-e812-4a12-a762-fcc86b1aad42",
+              "name": "title_wordpress",
+              "value": "={{ $json.title_wordpress }}",
+              "type": "string"
+            },
+            {
+              "id": "6a7824ab-1389-40ee-ac55-918e533a887b",
+              "name": "content_wordpress",
+              "value": "={{ $json.content_wordpress }}",
+              "type": "string"
+            },
+            {
+              "id": "aabc2d26-e0c9-4ea6-8988-b443af3fac36",
+              "name": "tags_wordpress",
+              "value": "={{ $json.tags_wordpress }}",
+              "type": "string"
+            },
+            {
+              "id": "52bcf4c2-eb1c-4915-8ff5-bfe1ea2208a8",
+              "name": "title_linkedin",
+              "value": "={{ $json.title_linkedin }}",
+              "type": "string"
+            },
+            {
+              "id": "40673a7b-805e-4431-b6d2-267639cfc099",
+              "name": "content_linkedin",
+              "value": "={{ $json.content_linkedin }}",
+              "type": "string"
+            },
+            {
+              "id": "cc2cd124-2445-4cfc-8338-64c96290f6ab",
+              "name": "tags_linkedin",
+              "value": "={{ $json.tags_linkedin }}",
+              "type": "string"
+            },
+            {
+              "id": "45a17ec7-b98d-4ef5-b490-475b9ed401df",
+              "name": "title_x",
+              "value": "={{ $json.title_x }}",
+              "type": "string"
+            },
+            {
+              "id": "32c0c2a2-64f7-4e7c-8d70-2004b5b6001d",
+              "name": "content_x",
+              "value": "={{ $json.content_x }}",
+              "type": "string"
+            },
+            {
+              "id": "d499492d-e499-49e3-935c-5765dbd6593b",
+              "name": "tags_x",
+              "value": "={{ $json.tags_x }}",
+              "type": "string"
+            },
+            {
+              "id": "54630127-65b5-461a-9b9f-5a26a544774c",
+              "name": "title_instagram",
+              "value": "={{ $json.title_instagram }}",
+              "type": "string"
+            },
+            {
+              "id": "7f0c3b1e-dc4a-4599-8798-c58217fa8ea4",
+              "name": "content_instagram",
+              "value": "={{ $json.content_instagram }}",
+              "type": "string"
+            },
+            {
+              "id": "01036f73-94ef-47ee-be26-8351d57d086e",
+              "name": "tags_instagram",
+              "value": "={{ $json.tags_instagram }}",
+              "type": "string"
+            },
+            {
+              "id": "d77ce354-4376-4d0e-8a1a-79475e76dd75",
+              "name": "title_facebook",
+              "value": "={{ $json.title_facebook }}",
+              "type": "string"
+            },
+            {
+              "id": "4661104f-6a84-455d-8e47-83c2357ee761",
+              "name": "content_facebook",
+              "value": "={{ $json.content_facebook }}",
+              "type": "string"
+            },
+            {
+              "id": "216907be-1891-4641-8c9d-def5059803b0",
+              "name": "tags_facebook",
+              "value": "={{ $json.tags_facebook }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4000,
+        64
+      ],
+      "id": "1c73d637-c977-479d-980f-aae442e96493",
+      "name": "Prepare Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nconst now = new Date().toISOString();\n\nconst mediaId = data.featured_media_id\n  ? Number(data.featured_media_id)\n  : null;\n\nconst mediaUrl = data.image_url || \"\";\n\nconst imageSourceUrl =\n  $(\"PollinationsAI\").first().binary?.data?.url ||\n  $(\"PollinationsAI\").first().json?.data?.url ||\n  data.image_source_url ||\n  mediaUrl ||\n  \"\";\n\n\n// Fallback: si todavía usas data.title/data.content, no rompe.\nconst titleWordPress = data.title_wordpress || data.title || \"\";\nconst contentWordPress = data.content_wordpress || data.content || \"\";\nconst tagsWordPress = data.tags_wordpress || data.tags || \"\";\n\nreturn [\n  {\n    json: {\n      session_id: `post_${Date.now()}`,\n\n      title: titleWordPress,\n      content: contentWordPress,\n\n      status: \"pending_review\",\n\n      idioma: data.idioma || \"\",\n      tamano: data.tamano || \"\",\n      descripcion: data.descripcion || \"\",\n      custom_category: data.custom_category || \"\",\n\n      categories: data.categoryId ? [Number(data.categoryId)] : [],\n      tags: Array.isArray(data.tagIds) ? data.tagIds.map(Number) : [],\n\n      featured_media_id: mediaId,\n      featured_media: mediaId,\n\n      title_current: titleWordPress,\n      content_current: contentWordPress,\n\n      category_current: data.categoryId ? [Number(data.categoryId)] : [],\n      image_current: mediaUrl,\n      image_current_id: mediaId,\n      image_source_url: imageSourceUrl,\n      tags_current: Array.isArray(data.tagIds) ? data.tagIds.map(Number) : [],\n\n      keyword_current: data.keyword || \"\",\n      image_prompt_current: data.image_prompt || \"\",\n\n      // NUEVO: contenidos multicanal\n      title_wordpress: titleWordPress,\n      content_wordpress: contentWordPress,\n      tags_wordpress: tagsWordPress,\n\n      title_linkedin: data.title_linkedin || \"\",\n      content_linkedin: data.content_linkedin || \"\",\n      tags_linkedin: data.tags_linkedin || \"\",\n\n      title_x: data.title_x || \"\",\n      content_x: data.content_x || \"\",\n      tags_x: data.tags_x || \"\",\n\n      title_facebook: data.title_facebook || \"\",\n      content_facebook: data.content_facebook || \"\",\n      tags_facebook: data.tags_facebook || \"\",\n\n      title_instagram: data.title_instagram || \"\",\n      content_instagram: data.content_instagram || \"\",\n      tags_instagram: data.tags_instagram || \"\",\n\n      publication_type: data.publication_type || \"\",\n      formato_texto: data.formato_texto || \"\",\n      tono: data.tono || \"\",\n      objetivo: data.objetivo || \"\",\n      publico_objetivo: data.publico_objetivo || \"\",\n      nivel_tecnico: data.nivel_tecnico || \"\",\n\n      cta: data.cta || \"\",\n      custom_cta: data.custom_cta || \"\",\n      cta_intensity: data.cta_intensity || \"\",\n\n      visual_style: data.visual_style || \"\",\n      image_format: data.image_format || \"\",\n      visual_reference: data.visual_reference || \"\",\n\n      storytelling_format: data.storytelling_format ?? false,\n      viral_format: data.viral_format ?? false,\n      professional_linkedin_format: data.professional_linkedin_format ?? false,\n\n      generate_image: data.generate_image ?? false,\n\n      text_versions: [\n        {\n          version: 1,\n          source: \"ai_initial\",\n          title: titleWordPress,\n          content: contentWordPress,\n        }\n      ],\n\n      image_versions: [\n        {\n          version: 1,\n          source: \"ai_initial\",\n          image: mediaUrl,\n          image_source_url: imageSourceUrl,\n          image_id: mediaId,\n        }\n      ],\n\n      created_at: now,\n      updated_at: now,\n\n      review_action: \"none\",\n\n      wp_post_id: \"\",\n      wp_post_url: \"\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3504,
+        64
+      ],
+      "id": "849e24ec-5916-4a4c-b55a-a7afe36dfaee",
+      "name": "Prepare provisional post"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $json;\n\n// Recuperar datos del formulario original si existe\nlet mappedData = {};\n\ntry {\n  const possibleMappedData = $('Map Input Data').item.json;\n  if (\n    possibleMappedData &&\n    typeof possibleMappedData === \"object\" &&\n    !Array.isArray(possibleMappedData)\n  ) {\n    mappedData = possibleMappedData;\n  }\n} catch (error) {\n  mappedData = {};\n}\n\nconst requestedSizeRaw =\n  data.tamano ||\n  mappedData.tamano ||\n  data.requestedSizeRaw ||\n  \"\";\n\nconst requestedSize = requestedSizeRaw\n  .toString()\n  .trim()\n  .toLowerCase()\n  .normalize(\"NFD\")\n  .replace(/[\\u0300-\\u036f]/g, \"\");\n\n// HTML real del artículo con fallback\nconst html =\n  data.content_wordpress ||\n  data.content ||\n  \"\";\n// Texto plano para contar palabras reales\nconst plainText = html\n  .replace(/<[^>]+>/g, \" \")\n  .replace(/&nbsp;/gi, \" \")\n  .replace(/&amp;/gi, \"&\")\n  .replace(/\\s+/g, \" \")\n  .trim();\n\nconst wordCount = plainText\n  ? plainText.split(\" \").filter(Boolean).length\n  : 0;\n\nlet normalizedSize = \"\";\nlet minWords = 0;\nlet maxWords = 0;\nlet targetLabel = \"\";\n\nif (\n  requestedSize.includes(\"corto\") ||\n  requestedSize.includes(\"breve\") ||\n  requestedSize.includes(\"400\")\n) {\n  normalizedSize = \"corto\";\n  minWords = 300;\n  maxWords = 450;\n  targetLabel = \"300-450 palabras\";\n\n} else if (\n  requestedSize.includes(\"estandar\") ||\n  requestedSize.includes(\"estándar\") ||\n  requestedSize.includes(\"800\") ||\n  requestedSize.includes(\"medio\")\n) {\n  normalizedSize = \"estandar\";\n  minWords = 600;\n  maxWords = 900;\n  targetLabel = \"600-900 palabras\";\n\n} else if (\n  requestedSize.includes(\"largo\") ||\n  requestedSize.includes(\"extenso\") ||\n  requestedSize.includes(\"1500\")\n) {\n  normalizedSize = \"largo\";\n  minWords = 1200;\n  maxWords = 1600;\n  targetLabel = \"1200-1600 palabras\";\n}\n\nconst isValidLength = minWords > 0 && wordCount >= minWords;\n\nreturn {\n  json: {\n    ...mappedData,\n    ...data,\n    requestedSizeRaw,\n    normalizedSize,\n    wordCount,\n    minWords,\n    maxWords,\n    targetLabel,\n    isValidLength,\n    retries: Number(data.retries ?? 0),\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        256
+      ],
+      "id": "bdaa5da4-e636-433a-9af1-2dbcf15ca7a2",
+      "name": "Validate Article Lenght"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $json;\n\nreturn {\n  json: {\n    tagId: Number(data.id),\n    tagName: data.name || \"\",\n    tagSlug: data.slug || \"\",\n    tagReady: true,\n    existed: false\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        -32
+      ],
+      "id": "d6ee975e-56ae-4a5c-8001-c7e2b1231840",
+      "name": "Sucess Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Separate tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PollinationsAI": {
+      "main": [
+        [
+          {
+            "node": "Upload Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WP media": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Collect Tag IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Map Input Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Input Data": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain (article)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain (image)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Prepare Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check WP Category": {
+      "main": [
+        [
+          {
+            "node": "Category exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Category exists": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Category exists?": {
+      "main": [
+        [
+          {
+            "node": "Category exists",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate": {
+      "main": [
+        [
+          {
+            "node": "Create categories",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Increment Retry Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format": {
+      "main": [
+        [
+          {
+            "node": "Validate Article Lenght",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Created & Sent Category": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code Error": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain (article)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain (image)": {
+      "main": [
+        [
+          {
+            "node": "PollinationsAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain (article)": {
+      "main": [
+        [
+          {
+            "node": "Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain (regenerate)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain (regenerate)": {
+      "main": [
+        [
+          {
+            "node": "Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain (image)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image": {
+      "main": [
+        [
+          {
+            "node": "WP media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create categories": {
+      "main": [
+        [
+          {
+            "node": "Check WP Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create category": {
+      "main": [
+        [
+          {
+            "node": "Created & Sent Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create tag": {
+      "main": [
+        [
+          {
+            "node": "Sucess Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content_sessions": {
+      "main": [
+        []
+      ]
+    },
+    "Increment Retry Count": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain (regenerate)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separate tags": {
+      "main": [
+        [
+          {
+            "node": "Create tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Tag IDs": {
+      "main": [
+        [
+          {
+            "node": "Merge Tag Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Tag Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare provisional post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare provisional post": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Article Lenght": {
+      "main": [
+        [
+          {
+            "node": "Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sucess Response": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "tags": []
+}
