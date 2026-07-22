@@ -1,8 +1,8 @@
 # n8n Social Media Automation
 
-AI-powered content generation, review and publishing workflows built with n8n, OpenAI, WordPress REST API and webhooks.
+A modular automation system built with n8n that manages the complete lifecycle of AI-generated content, from generation and review to multi-platform publication.
 
-This repository contains modular n8n workflows designed to work together as the automation backend of a custom web application.
+The workflows are designed to integrate with a custom web application through webhooks and can be adapted to different publishing environments.
 
 ---
 
@@ -10,7 +10,7 @@ This repository contains modular n8n workflows designed to work together as the 
 
 These workflows are not intended to be used as standalone automations.
 
-They were designed as the backend automation layer of a custom web application where users can generate, review and publish AI-powered content through a graphical interface.
+They were designed as the backend automation layer of a custom web application where users can generate, review, and publish AI-powered content through a graphical interface.
 
 The web application collects all publication settings, such as:
 
@@ -84,11 +84,27 @@ workflow-2-review-regeneration.json
 
 ---
 
-## Workflow 3 — Publishing
+## Workflow 3 — Publishing & Distribution
 
-Coming soon.
+Responsible for publishing approved content to multiple platforms.
 
-Responsible for publishing approved content to WordPress and supported social media platforms.
+Main responsibilities:
+
+- Publish to WordPress
+- Publish to LinkedIn
+- Publish to X (Twitter)
+- Publish to Facebook
+- Publish to Instagram
+- Dynamic credential support
+- Multi-platform routing
+- Update publication session
+- Return webhook response
+
+File:
+
+```
+workflow-3-publishing-distribution.json
+```
 
 ---
 
@@ -97,12 +113,14 @@ Responsible for publishing approved content to WordPress and supported social me
 ```text
                  Custom Web Application
                            │
+                    POST / Webhook
+                           │
                            ▼
                  Workflow 1
           AI Content Generation
                            │
                            ▼
-            Draft stored in Data Table
+              Review Session Stored
                            │
                            ▼
                  Workflow 2
@@ -113,20 +131,59 @@ Responsible for publishing approved content to WordPress and supported social me
                            │
                            ▼
                  Workflow 3
-          Publishing & Distribution
+        Publishing & Distribution
+                           │
+        ┌────────┬────────┬────────┬────────┐
+        ▼        ▼        ▼        ▼        ▼
+    WordPress LinkedIn    X    Facebook Instagram
 ```
 
 ---
 
 # Technologies
 
+## Automation
+
 - n8n
+- Webhooks
+- n8n Data Tables
+
+## Artificial Intelligence
+
 - OpenAI
 - Pollinations AI
+
+## APIs & Integrations
+
 - WordPress REST API
-- n8n Data Tables
-- Webhooks
+- LinkedIn API
+- X (Twitter) API
+- Facebook Graph API
+- Instagram Graph API
+- Cloudinary API
+
+## Development
+
 - JavaScript (Code Nodes)
+- JSON
+- HTTP Requests
+- OAuth 2.0
+- Basic Authentication
+
+---
+
+# Concepts Demonstrated
+
+- Workflow Orchestration
+- Multi-platform Content Distribution
+- AI Content Generation
+- AI Image Generation
+- Dynamic Credential Handling
+- Content Review & Regeneration
+- Version History
+- Modular Workflow Design
+- API Integration
+- Error Handling
 
 ---
 
@@ -170,11 +227,29 @@ n8n-social-media-automation/
 ├── README.md
 ├── workflow-1-content-generation.json
 ├── workflow-2-review-regeneration.json
+├── workflow-3-publishing-distribution.json
 ├── screenshots/
+│   ├── workflow-1-content-generation.png
+│   ├── workflow-2-review-regeneration.png
+│   └── workflow-3-publishing-distribution.png
 └── docs/
 ```
 
 ---
+
+# Screenshots
+
+## Workflow 1 – Content Generation
+
+![Workflow 1](screenshots/workflow-1-content-generation.png)
+
+## Workflow 2 – Review & Regeneration
+
+![Workflow 2](screenshots/workflow-2-review-regeneration.png)
+
+## Workflow 3 – Publishing & Distribution
+
+![Workflow 3](screenshots/workflow-3-publishing-distribution.png)
 
 # Workflow Dependencies
 
@@ -184,7 +259,7 @@ Workflow 1 creates the review session.
 
 Workflow 2 loads that session and allows regenerating text or images while preserving version history.
 
-Workflow 3 will publish the approved content to WordPress and the configured social media platforms.
+Workflow 3 receives the approved draft and publishes it to the configured platforms while updating the publication session.
 
 ---
 
@@ -210,10 +285,14 @@ The custom frontend orchestrates the complete process by communicating with each
 
 - Workflow 1 — AI Content Generation
 - Workflow 2 — Review & Regeneration
-
-## In Progress
-
 - Workflow 3 — Publishing & Distribution
+
+## Planned Improvements
+
+- Additional social media connectors
+- Improved error handling
+- OAuth setup wizard
+- Enhanced logging and monitoring
 
 ---
 
@@ -234,3 +313,7 @@ Before running them you must configure:
 # License
 
 MIT
+
+---
+
+If you have any questions or suggestions, feel free to open an issue or contribute to the project.
