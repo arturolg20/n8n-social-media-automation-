@@ -1,0 +1,3206 @@
+{
+  "name": "generación_publicaciones (workflow 3) webhook all platforms decrypt publicar git",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "publish-social-content",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -768,
+        32
+      ],
+      "id": "8b966662-94a9-4225-bb0e-886a520373f5",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1808,
+        -192
+      ],
+      "id": "efd2dc9c-73c7-4682-ab9f-8ed832971f8e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "content_sessions",
+          "cachedResultUrl": ""
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "session_id",
+              "keyValue": "={{$('decrypt credentials').first().json.session_id }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        64,
+        32
+      ],
+      "id": "8b90a42e-41c7-4ccd-b605-3ffad0abf4f8",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nif (!inputItems.length) {\n  return [\n    {\n      json: {\n        error: true,\n        message: \"No se han recibido items\"\n      }\n    }\n  ];\n}\n\nconst output = [];\n\nconst webhookRaw = $(\"Webhook\").first().json || {};\nconst webhookData = webhookRaw.body || webhookRaw;\n\nconst decryptRaw = $(\"decrypt credentials\").first().json || {};\nconst decryptData = decryptRaw.body || decryptRaw;\n\nfor (const item of inputItems) {\n\n  const row = item.json || {};\n\n  const credentialsRaw = row.credentials || \"{}\";\n\n  let credentials = {};\n\n  try {\n    credentials =\n      typeof credentialsRaw === \"string\"\n        ? JSON.parse(credentialsRaw)\n        : credentialsRaw;\n  } catch (e) {\n    credentials = {};\n  }\n\n  const body = {\n    ...row,\n    ...webhookData,\n    ...decryptData,\n    ...credentials\n  };\n\n  const allowRepublish =\n    body.allow_republish === true ||\n    body.allow_republish === \"true\";\n\n  const version = Number(\n    body.version ||\n    body.selected_version ||\n    1\n  );\n\n  let platforms = [];\n\n  const platformsInput =\n    body.platforms ||\n    body.selected_platforms ||\n    body.publish_platforms ||\n    {};\n\n  // Objeto tipo { web:true, linkedin:true }\n  if (\n    platformsInput &&\n    typeof platformsInput === \"object\" &&\n    !Array.isArray(platformsInput)\n  ) {\n\n    if (\n      platformsInput.web === true ||\n      platformsInput.web === \"true\" ||\n      platformsInput.wordpress === true ||\n      platformsInput.wordpress === \"true\"\n    ) {\n      platforms.push(\"wordpress\");\n    }\n\n    if (\n      platformsInput.linkedin === true ||\n      platformsInput.linkedin === \"true\"\n    ) {\n      platforms.push(\"linkedin\");\n    }\n\n    if (\n      platformsInput.facebook === true ||\n      platformsInput.facebook === \"true\"\n    ) {\n      platforms.push(\"facebook\");\n    }\n\n    if (\n      platformsInput.instagram === true ||\n      platformsInput.instagram === \"true\"\n    ) {\n      platforms.push(\"instagram\");\n    }\n\n    if (\n      platformsInput.twitter === true ||\n      platformsInput.twitter === \"true\" ||\n      platformsInput.x === true ||\n      platformsInput.x === \"true\"\n    ) {\n      platforms.push(\"x\");\n    }\n  }\n\n  // Array\n  if (Array.isArray(platformsInput)) {\n    platforms.push(...platformsInput);\n  }\n\n  // String tipo \"wordpress,linkedin\"\n  if (\n    typeof platformsInput === \"string\" &&\n    platformsInput.trim()\n  ) {\n    platforms.push(\n      ...platformsInput\n        .split(\",\")\n        .map(p => p.trim())\n        .filter(Boolean)\n    );\n  }\n\n  const toggleMap = {\n    wordpress: body.wordpress || body.web,\n    linkedin: body.linkedin,\n    facebook: body.facebook,\n    instagram: body.instagram,\n    x: body.x || body.twitter\n  };\n\n  for (const [platform, value] of Object.entries(toggleMap)) {\n    if (\n      value === true ||\n      value === \"true\" ||\n      value === 1 ||\n      value === \"1\"\n    ) {\n      platforms.push(platform);\n    }\n  }\n\n  platforms = [\n    ...new Set(\n      platforms\n        .map(p => String(p).toLowerCase().trim())\n        .map(p => p === \"web\" ? \"wordpress\" : p)\n        .map(p => p === \"twitter\" ? \"x\" : p)\n        .filter(p =>\n          [\n            \"wordpress\",\n            \"linkedin\",\n            \"facebook\",\n            \"instagram\",\n            \"x\"\n          ].includes(p)\n        )\n    )\n  ];\n\n  const wpUser = String(\n    body.wordpress_user || \"\"\n  ).trim();\n\n  const wpPassword = String(\n    body.wordpress_password || \"\"\n  ).replace(/\\s+/g, \"\");\n\n  const wpBasicAuth =\n    \"Basic \" +\n    Buffer.from(\n      `${wpUser}:${wpPassword}`\n    ).toString(\"base64\");\n\n  if (!platforms.length) {\n\n    output.push({\n      json: {\n        ...body,\n\n        wordpress_user: wpUser,\n        wordpress_password: wpPassword,\n        wp_basic_auth: wpBasicAuth,\n\n        has_platforms: false,\n        status: \"no_platform_selected\",\n        message: \"No hay plataformas seleccionadas\",\n\n        debug_platformsInput: platformsInput,\n        debug_webhook_platforms: webhookData.platforms,\n        debug_decrypt_platforms: decryptData.platforms,\n        debug_keys: Object.keys(body)\n      }\n    });\n\n    continue;\n  }\n\n  // MUY IMPORTANTE\n  delete body.platform;\n\n  for (const currentPlatform of platforms) {\n\n    const publishedIdField = {\n      wordpress: \"wp_post_id\",\n      linkedin: \"linkedin_post_id\",\n      facebook: \"facebook_post_id\",\n      instagram: \"instagram_post_id\",\n      x: \"x_post_id\"\n    }[currentPlatform];\n\n    const publishedUrlField = {\n      wordpress: \"wp_post_url\",\n      linkedin: \"linkedin_post_url\",\n      facebook: \"facebook_post_url\",\n      instagram: \"instagram_post_url\",\n      x: \"x_post_url\"\n    }[currentPlatform];\n\n    const alreadyPublished =\n      Boolean(row[publishedIdField]);\n\n    output.push({\n      json: {\n\n        ...body,\n\n        wordpress_user: wpUser,\n        wordpress_password: wpPassword,\n        wp_basic_auth: wpBasicAuth,\n\n        has_platforms: true,\n\n        allow_republish: allowRepublish,\n        selected_version: version,\n\n        already_published: alreadyPublished,\n\n        published_id_field: publishedIdField,\n        published_url_field: publishedUrlField,\n\n        published_id:\n          row[publishedIdField] || \"\",\n\n        published_url:\n          row[publishedUrlField] || \"\",\n\n        should_publish: true,\n\n        // FORZADO AL FINAL\n        platform: currentPlatform\n      }\n    });\n  }\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        32
+      ],
+      "id": "8592ada9-6a1c-4d72-91b4-576b201fd411",
+      "name": "Preparar publicación multicanal",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "86c2b219-55b2-4424-b4c1-5670ca4bc991",
+              "leftValue": "={{ $json.has_platforms }}",
+              "rightValue": "reviewed",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        32
+      ],
+      "id": "304351eb-8e37-49cf-aef4-4cd12e35c243",
+      "name": "¿Plataformas seleccionadas?"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        736,
+        16
+      ],
+      "id": "103be4d5-e3cd-4e73-8086-37e45e0d9375",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.platform === \"wordpress\" }}",
+                    "rightValue": "wordpress",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "6d3b3ef3-6804-436d-b421-2730dc1c5021"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "de6b48bd-f02f-4a48-993f-9a56c1ed8eaa",
+                    "leftValue": "={{ $json.platform === \"linkedin\" }}",
+                    "rightValue": "linkedin",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5b4fc943-ae0d-4c04-aeab-c017cecf5b13",
+                    "leftValue": "={{ $json.platform === \"x\" }}",
+                    "rightValue": "x",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f479b7a3-c2d5-49a8-a92d-addfb1248e93",
+                    "leftValue": "={{ $json.platform === \"instagram\" }}",
+                    "rightValue": "instagram",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0e1d9730-fe37-46f2-b904-b748bfceb08c",
+                    "leftValue": "={{ $json.platform === \"facebook\" }}",
+                    "rightValue": "facebook",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e8b94ad0-9d47-4ab8-9838-9197c8702c0b",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        864,
+        592
+      ],
+      "id": "4ff9327e-d598-4c32-a71d-0e9505cb429c",
+      "name": "Controlador plataformas seleccionadas"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require(\"crypto\");\n\nconst input = $json || {};\n\nlet body = input.body || input;\n\nif (!body.payload || !body.iv || !body.tag || !body.timestamp || !body.signature) {\n  const webhookData = $(\"Webhook\").first().json || {};\n  body = webhookData.body || webhookData;\n}\n\nconst encryptionKeyRaw = $env.WEBHOOK_ENCRYPTION_KEY;\nconst hmacSecret = $env.WEBHOOK_HMAC_SECRET;\n\nif (!encryptionKeyRaw) {\n  throw new Error(\"Falta WEBHOOK_ENCRYPTION_KEY\");\n}\n\nif (!hmacSecret) {\n  throw new Error(\"Falta WEBHOOK_HMAC_SECRET\");\n}\n\nif (!body.payload || !body.iv || !body.tag || !body.timestamp || !body.signature) {\n  throw new Error(\n    `Faltan campos cifrados obligatorios. Campos disponibles: ${Object.keys(body).join(\", \")}`\n  );\n}\n\nconst encryptionKey = Buffer.from(encryptionKeyRaw, \"base64\");\n\nif (encryptionKey.length !== 32) {\n  throw new Error(\"WEBHOOK_ENCRYPTION_KEY debe tener 32 bytes tras decodificar Base64\");\n}\n\nconst now = Math.floor(Date.now() / 1000);\nconst timestamp = Number(body.timestamp);\n\nif (!timestamp || Math.abs(now - timestamp) > 300) {\n  throw new Error(\"Petición expirada\");\n}\n\nconst dataToSign = `${body.payload}.${body.iv}.${body.tag}.${body.timestamp}`;\n\nconst calculatedSignature = crypto\n  .createHmac(\"sha256\", hmacSecret)\n  .update(dataToSign)\n  .digest(\"hex\");\n\nconst receivedSignature = String(body.signature);\n\nif (\n  calculatedSignature.length !== receivedSignature.length ||\n  !crypto.timingSafeEqual(\n    Buffer.from(calculatedSignature, \"hex\"),\n    Buffer.from(receivedSignature, \"hex\")\n  )\n) {\n  throw new Error(\"Firma HMAC inválida\");\n}\n\nconst decipher = crypto.createDecipheriv(\n  \"aes-256-gcm\",\n  encryptionKey,\n  Buffer.from(body.iv, \"base64\")\n);\n\ndecipher.setAuthTag(Buffer.from(body.tag, \"base64\"));\n\nconst decrypted = Buffer.concat([\n  decipher.update(Buffer.from(body.payload, \"base64\")),\n  decipher.final(),\n]);\n\nconst parsed = JSON.parse(decrypted.toString(\"utf8\"));\n\nconst setData = { ...input };\n\n// Limpiar campos de publicación que no deben arrastrarse\ndelete setData.platform;\ndelete setData.published_id_field;\ndelete setData.published_url_field;\ndelete setData.published_id;\ndelete setData.published_url;\ndelete setData.should_publish;\ndelete setData.already_published;\ndelete setData.has_platforms;\n\nconst wordpressUser = parsed.wordpress_user || \"\";\nconst wordpressPassword = String(parsed.wordpress_password || \"\").replace(/\\s+/g, \"\");\n\nconst wpAuthHeader =\n  wordpressUser && wordpressPassword\n    ? \"Basic \" + Buffer.from(`${wordpressUser}:${wordpressPassword}`).toString(\"base64\")\n    : null;\n\nreturn [\n  {\n    json: {\n      ...setData,\n\n      session_id: parsed.session_id || setData.session_id || null,\n\n      wordpress_urlapi: parsed.wordpress_urlapi || null,\n      wordpress_user: wordpressUser || null,\n      wordpress_password: wordpressPassword || null,\n      wp_auth_header: wpAuthHeader,\n\n      linkedin_urloauthredirect: parsed.linkedin_urloauthredirect || null,\n      linkedin_clientid: parsed.linkedin_clientid || null,\n      linkedin_clientsecret: parsed.linkedin_clientsecret || null,\n\n      x_urloauthredirect: parsed.x_urloauthredirect || null,\n      x_clientid: parsed.x_clientid || null,\n      x_clientsecret: parsed.x_clientsecret || null\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        0
+      ],
+      "id": "9a6c4058-b114-4282-8f1b-718262c5a5bc",
+      "name": "decrypt credentials"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "content_sessions",
+          "cachedResultUrl": ""
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "session_id",
+              "keyValue": "={{ $('id').first().json.session_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "credentials": "={{ JSON.stringify({\n  wordpress_urlapi: $('decrypt credentials').first().json.wordpress_urlapi,\n  wordpress_user: $('decrypt credentials').first().json.wordpress_user,\n  wordpress_password: $('decrypt credentials').first().json.wordpress_password,\n\n  linkedin_urloauthredirect: $('decrypt credentials').first().json.linkedin_urloauthredirect,\n  linkedin_clientid: $('decrypt credentials').first().json.linkedin_clientid,\n  linkedin_clientsecret: $('decrypt credentials').first().json.linkedin_clientsecret,\n\n  x_urloauthredirect: $('decrypt credentials').first().json.x_urloauthredirect,\n  x_clientid: $('decrypt credentials').first().json.x_clientid,\n  x_clientsecret: $('decrypt credentials').first().json.x_clientsecret\n}) }}",
+            "session_id": "={{ $('decrypt credentials').first().json.session_id }}",
+            "status": "={{ $('Webhook').item.json.body.status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_current",
+              "displayName": "title_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "content_current",
+              "displayName": "content_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "excerpt_current",
+              "displayName": "excerpt_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "meta_current",
+              "displayName": "meta_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "category_current",
+              "displayName": "category_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "image_current",
+              "displayName": "image_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "tags_current",
+              "displayName": "tags_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "text_versions",
+              "displayName": "text_versions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "image_versions",
+              "displayName": "image_versions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "review_action",
+              "displayName": "review_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "wp_post_id",
+              "displayName": "wp_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "wp_post_url",
+              "displayName": "wp_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "featured_media_id",
+              "displayName": "featured_media_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "featured_media",
+              "displayName": "featured_media",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "keyword_current",
+              "displayName": "keyword_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "image_prompt_current",
+              "displayName": "image_prompt_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "objetivo",
+              "displayName": "objetivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "publico_objetivo",
+              "displayName": "publico_objetivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "nivel_tecnico",
+              "displayName": "nivel_tecnico",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "tono",
+              "displayName": "tono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "formato_texto",
+              "displayName": "formato_texto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "publication_type",
+              "displayName": "publication_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "visual_style",
+              "displayName": "visual_style",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "image_format",
+              "displayName": "image_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "visual_reference",
+              "displayName": "visual_reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "storytelling_format",
+              "displayName": "storytelling_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "viral_format",
+              "displayName": "viral_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "professional_linkedin_format",
+              "displayName": "professional_linkedin_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "cta",
+              "displayName": "cta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "custom_cta",
+              "displayName": "custom_cta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "cta_intensity",
+              "displayName": "cta_intensity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "generate_image",
+              "displayName": "generate_image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "idioma",
+              "displayName": "idioma",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "tamano",
+              "displayName": "tamano",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "custom_category",
+              "displayName": "custom_category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "descripcion",
+              "displayName": "descripcion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "title_wordpress",
+              "displayName": "title_wordpress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "content_wordpress",
+              "displayName": "content_wordpress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "tags_wordpress",
+              "displayName": "tags_wordpress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "title_linkedin",
+              "displayName": "title_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "content_linkedin",
+              "displayName": "content_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "tags_linkedin",
+              "displayName": "tags_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "title_x",
+              "displayName": "title_x",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "content_x",
+              "displayName": "content_x",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "tags_x",
+              "displayName": "tags_x",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "title_instagram",
+              "displayName": "title_instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "content_instagram",
+              "displayName": "content_instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "tags_instagram",
+              "displayName": "tags_instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "title_facebook",
+              "displayName": "title_facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "content_facebook",
+              "displayName": "content_facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "tags_facebook",
+              "displayName": "tags_facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "linkedin_post_id",
+              "displayName": "linkedin_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "facebook_post_id",
+              "displayName": "facebook_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "instagram_post_id",
+              "displayName": "instagram_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "x_post_id",
+              "displayName": "x_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "linkedin_post_url",
+              "displayName": "linkedin_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "facebook_post_url",
+              "displayName": "facebook_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "instagram_post_url",
+              "displayName": "instagram_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "x_post_url",
+              "displayName": "x_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        0
+      ],
+      "id": "4f7742c7-6d1a-4f88-b7f9-0fa0a44ad8e7",
+      "name": "Update row(s)1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8679979d-2c78-4ed3-859d-47cd018bfc3a",
+              "name": "session_id",
+              "value": "={{ $json.body.session_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -576,
+        16
+      ],
+      "id": "2cfc4e6b-9d19-4d34-9f92-02709eac432b",
+      "name": "id"
+    },
+    {
+      "parameters": {
+        "jsCode": "const previous = $(\"Preparador Linkedin\").first().json;\nconst response = $(\"LinkedIn Posts\").first().json;\n\nconst headers = response.headers || {};\n\nconst linkedinPostId =\n  headers[\"x-restli-id\"] ||\n  headers[\"X-RestLi-Id\"] ||\n  null;\n\nconst linkedinPostUrl = linkedinPostId\n  ? `https://www.linkedin.com/feed/update/${linkedinPostId}/`\n  : null;\n\nreturn [\n  {\n    json: {\n      ...previous,\n      linkedin_success: true,\n      linkedin_status: \"published\",\n      linkedin_post_id: linkedinPostId,\n      linkedin_post_url: linkedinPostUrl,\n      linkedin_api_status_code: response.statusCode || null,\n      linkedin_published_at: new Date().toISOString(),\n      linkedin_message: \"Publicado correctamente en LinkedIn\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        80
+      ],
+      "id": "e7f0e22f-a064-430b-8513-8280a94e4cb4",
+      "name": "linkedin respuesta1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const previous = $(\"Preparador Linkedin\").first().json;\nconst response = $(\"LinkedIn post\").first().json;\n\nconst linkedinPostId =\n  response.urn ||\n  response.headers?.[\"x-restli-id\"] ||\n  response.headers?.[\"X-RestLi-Id\"] ||\n  null;\n\nconst linkedinPostUrl = linkedinPostId\n  ? `https://www.linkedin.com/feed/update/${linkedinPostId}/`\n  : null;\n\nreturn [\n  {\n    json: {\n      ...previous,\n      linkedin_success: true,\n      linkedin_status: \"published\",\n      linkedin_post_id: linkedinPostId,\n      linkedin_post_url: linkedinPostUrl,\n      linkedin_api_status_code: response.statusCode || null,\n      linkedin_published_at: new Date().toISOString(),\n      linkedin_message: \"Publicado correctamente en LinkedIn\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2608,
+        416
+      ],
+      "id": "c41c6856-5336-4d77-91fe-701bca66209c",
+      "name": "linkedin respuesta"
+    },
+    {
+      "parameters": {
+        "person": "",
+        "text": "={{ $(\"Preparador Linkedin\").first().json.linkedin_body.commentary }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        2256,
+        320
+      ],
+      "id": "ce5f3b72-61b1-4e78-be45-2714c46be9f3",
+      "name": "LinkedIn post",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Auxiliar dinamic modes\nusing httprequest for LinkedIn post (with images)",
+        "height": 352,
+        "width": 1296
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        -32
+      ],
+      "id": "9b094912-7d55-4fa7-8309-c403d1c6e59e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/rest/posts",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Authorization\": \"Bearer {{$json.linkedin_access_token}}\",\n  \"X-Restli-Protocol-Version\": \"2.0.0\",\n  \"LinkedIn-Version\": \"202604\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  author: $(\"Preparador Linkedin\").first().json.linkedin_author,\n  commentary: $(\"Preparador Linkedin\").first().json.linkedin_body.commentary,\n  visibility: \"PUBLIC\",\n  distribution: {\n    feedDistribution: \"MAIN_FEED\",\n    targetEntities: [],\n    thirdPartyDistributionChannels: []\n  },\n  content: {\n    media: {\n      id: $(\"linkedin image upload\").first().json.value.image,\n      altText: $(\"Preparador Linkedin\").first().json.title_linkedin || $(\"Preparador Linkedin\").first().json.title_current || \"Imagen del post\"\n    }\n  },\n  lifecycleState: \"PUBLISHED\",\n  isReshareDisabledByAuthor: false\n}\n}}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        80
+      ],
+      "id": "841382bd-6861-4b2b-a862-5a7d799189f3",
+      "name": "LinkedIn Posts",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.linkedin.com/rest/images?action=initializeUpload",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"X-Restli-Protocol-Version\": \"2.0.0\",\n  \"LinkedIn-Version\": \"202604\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{  initializeUploadRequest: {    owner: $(\"Preparador Linkedin\").first().json.linkedin_author  }}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1376,
+        368
+      ],
+      "id": "dec6ed70-37fc-4490-af82-80dcf0279e1e",
+      "name": "linkedin image upload"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $('linkedin image upload').first().json.value.uploadUrl }}",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1840,
+        80
+      ],
+      "id": "0449d4f5-f4ff-4abe-977b-9080371cb352",
+      "name": "linkedin upload binary"
+    },
+    {
+      "parameters": {
+        "content": "## WP GET me CHECK\nIn case of error, use this to identify the cause",
+        "height": 272,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        352
+      ],
+      "id": "a48bc60d-3437-49d7-a607-760de6e1e24b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Preparador Linkedin').first().json.image_current }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"Mozilla/5.0\",\n  \"Accept\": \"image/jpeg,image/png,image/webp,*/*\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1680,
+        80
+      ],
+      "id": "7ccd4216-5e60-40cb-969d-b66988ad1576",
+      "name": "download image to linkedIn"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Preparador X/Twitter').first().json.image_source_url || $('Preparador X/Twitter').first().json.image_current }}\n",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"Mozilla/5.0\",\n  \"Accept\": \"image/jpeg,image/png,image/webp,*/*\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1552,
+        672
+      ],
+      "id": "8e05687c-4f21-47e3-a93e-4984616f0ebb",
+      "name": "download image to X/Twitter"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://upload.twitter.com/1.1/media/upload.json?media_category=tweet_image",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "media",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1728,
+        672
+      ],
+      "id": "765e01a3-cea6-4c52-bb92-b4ffba24b32e",
+      "name": "upload media X",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twitter.com/2/tweets",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{$('Preparar body X').first().json.x_body.text}}\",\n  \"media\": {\n    \"media_ids\": [\"{{$('Preparar body X').first().json.x_body.media.media_ids[0]}}\"]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2400,
+        656
+      ],
+      "id": "c59e39b6-4377-49ef-afcc-bbea8e4e68ed",
+      "name": "Twitter/X posts"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cleanLinkedIn = ($json.content_linkedin || \"\")\n  .replace(/<[^>]*>/g, \" \")\n  .replace(/&nbsp;/g, \" \")\n  .trim()\n  .substring(0, 3000);\n\nreturn [\n  {\n    json: {\n      ...$json,\n\n      // URL maestra de la imagen WP\n      linkedin_image_source: $json.image_current,\n\n      linkedin_body: {\n        author: linkedinAuthor,\n        commentary: cleanLinkedIn,\n        visibility: \"PUBLIC\",\n        distribution: {\n          feedDistribution: \"MAIN_FEED\"\n        },\n        lifecycleState: \"PUBLISHED\"\n      },\n\n      linkedin_success: true,\n      content_linkedin_length: cleanLinkedIn.length\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        400
+      ],
+      "id": "141f2c47-8d59-4b57-be89-dbba91fb9cfa",
+      "name": "Preparador Linkedin"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nconst text =\n  data.content_x ||\n  data.content_current ||\n  \"\";\n\nreturn [\n  {\n    json: {\n      ...data,\n      x_text: text.substring(0, 280),\n      image_source_url: data.image_source_url || data.image_current || \"\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        672
+      ],
+      "id": "5999c0be-2acf-482a-b917-c9d417fd17c9",
+      "name": "Preparador X/Twitter"
+    },
+    {
+      "parameters": {
+        "jsCode": "const previous = $(\"Preparador X/Twitter\").first().json;\nconst mediaId = $(\"upload media X\").first().json.media_id_string;\n\nreturn [\n  {\n    json: {\n      ...previous,\n      x_body: {\n        text: previous.x_text,\n        media: {\n          media_ids: [mediaId]\n        }\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        672
+      ],
+      "id": "b4fd3c49-7060-4ee8-b99e-a05732200f42",
+      "name": "Preparar body X"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('decrypt credentials').first().json.wordpress_urlapi }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $('decrypt credentials').first().json.wp_auth_header }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "title",
+              "value": "={{ $json.title_current }}"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.content_current }}"
+            },
+            {
+              "name": "featured_media",
+              "value": "={{ $json.featured_media_id }}"
+            },
+            {
+              "name": "tags",
+              "value": "={{ JSON.parse($json.tags_current).map(Number) }}"
+            },
+            {
+              "name": "categories",
+              "value": "={{ JSON.parse($json.category_current).map(Number) }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.date }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        464
+      ],
+      "id": "644ea7ce-2a69-41d1-b29e-bf7dc2862fd0",
+      "name": "WP Posts dinamico",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "waitBetweenTries": 2500
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\",\n  \"Content-Type\": \"application/json\",\n  \"User-Agent\": \"Mozilla/5.0\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "title",
+              "value": "={{ $json.title_current }}"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.content_current }}"
+            },
+            {
+              "name": "featured_media",
+              "value": "={{ $json.featured_media_id }}"
+            },
+            {
+              "name": "tags",
+              "value": "={{ JSON.parse($json.tags_current).map(Number) }}"
+            },
+            {
+              "name": "categories",
+              "value": "={{ JSON.parse($json.category_current).map(Number) }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.date }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        96,
+        368
+      ],
+      "id": "478500c2-c7d9-4e43-a765-69d3fbf72235",
+      "name": "WP Posts estatico",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "waitBetweenTries": 2500
+    },
+    {
+      "parameters": {
+        "url": "",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\",\n  \"User-Agent\": \"Mozilla/5.0\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -320,
+        464
+      ],
+      "id": "aa09cd8c-3592-4fcd-bb9f-f7b7cac81e45",
+      "name": "WP Posts estatico/dinamico",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "waitBetweenTries": 2500,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json || {};\n\n// Datos base\nconst title = input.title || input.post_title || \"\";\nconst contentInstagram =\n  input.content_instagram ||\n  input.instagram_text ||\n  input.content_social ||\n  input.content_current ||\n  input.content ||\n  \"\";\n\n// Imagen pública ya subida en WP o recibida del WF1\nconst imageUrl =\n  input.image_url ||\n  input.featured_image_url ||\n  input.media_url ||\n  input.source_url ||\n  \"\";\n\n// Credenciales / IDs\nconst instagramUserId =\n  input.instagram_user_id ||\n  input.ig_user_id ||\n  input.credentials?.instagram_user_id ||\n  input.credentials?.ig_user_id ||\n  \"\";\n\nconst instagramAccessToken =\n  input.instagram_access_token ||\n  input.access_token ||\n  input.credentials?.instagram_access_token ||\n  input.credentials?.access_token ||\n  \"\";\n\nif (!instagramUserId) {\n  throw new Error(\"Falta instagram_user_id / ig_user_id\");\n}\n\nif (!instagramAccessToken) {\n  throw new Error(\"Falta instagram_access_token\");\n}\n\nif (!imageUrl) {\n  throw new Error(\"Falta image_url pública para Instagram\");\n}\n\nconst caption = contentInstagram || title;\n\nif (!caption) {\n  throw new Error(\"Falta texto/caption para Instagram\");\n}\n\nreturn [\n  {\n    json: {\n      ...input,\n\n      platform: \"instagram\",\n\n      instagram_user_id: instagramUserId,\n      instagram_access_token: instagramAccessToken,\n\n      image_url: imageUrl,\n      caption,\n\n      create_media_url: `https://graph.facebook.com/v23.0/${instagramUserId}/media`,\n      publish_media_url: `https://graph.facebook.com/v23.0/${instagramUserId}/media_publish`\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        928
+      ],
+      "id": "f76e61e8-5cfd-4c7e-b726-9e73d44497b5",
+      "name": "Preparador instagram"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "946eb96f-504e-4127-8a68-aa8f39bd89cf",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "6b69a575-27b0-4bb8-b30d-649d9c860331",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -176,
+        928
+      ],
+      "id": "46a85b2b-dc15-4eb8-85ee-9491729d4529",
+      "name": "existe image_url publica?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v23.0/{{ $json.instagram_user_id }}/media\n",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "={{ $json.public_image_url || $json.image_url }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $json.caption }}"
+            },
+            {
+              "name": "=access_token",
+              "value": "={{ $json.instagram_access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        848,
+        1184
+      ],
+      "id": "1a4c230a-0345-4a39-b701-6c1f6f8b9c9e",
+      "name": "media container instagram"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v23.0/{{ $json.instagram_user_id }}/media_publish",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=creation_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "=access_token",
+              "value": "={{ $('Preparador instagram').first().json.instagram_access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        528,
+        560
+      ],
+      "id": "1dba023f-3497-4352-9ab6-1deb013acba9",
+      "name": "publish media instagram"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.cloudinary.com/v1_1/{{$json.cloud_name}}/image/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "upload_preset",
+              "value": "instagram_public"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        1120
+      ],
+      "id": "7c33cfe8-b825-4310-bd72-1eb647b72f1c",
+      "name": "upload image hosting (cloudinary)",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    public_image_url: $json.secure_url\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        1056
+      ],
+      "id": "3b2db272-4458-4c2d-a438-f77687bd280e",
+      "name": "Code url cloudinary"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v23.0/{{ $json.instagram_user_id }}/media\n",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "={{ $json.public_image_url || $json.image_url }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $json.caption }}"
+            },
+            {
+              "name": "=access_token",
+              "value": "={{ $json.instagram_access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        128,
+        880
+      ],
+      "id": "a3cb550f-f392-42f5-ac91-03f04abb3423",
+      "name": "media container instagram true"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json || {};\n\n// Texto para Facebook\nconst contentFacebook =\n  input.content_facebook ||\n  input.facebook_text ||\n  input.content_social ||\n  input.content_current ||\n  input.content ||\n  \"\";\n\nconst title = input.title || input.post_title || \"\";\n\n// Caption final\nconst caption = contentFacebook || title;\n\nif (!caption) {\n  throw new Error(\"Falta texto/caption para Facebook\");\n}\n\n// Imagen pública si existe\nconst imageUrl =\n  input.image_url ||\n  input.image_source_url ||\n  input.image_current ||\n  input.featured_image_url ||\n  input.media_url ||\n  input.source_url ||\n  \"\";\n\n// Credenciales / IDs\nconst credentials = input.credentials || {};\n\nconst facebookPageId =\n  input.facebook_page_id ||\n  input.page_id ||\n  credentials.facebook_page_id ||\n  credentials.page_id ||\n  \"\";\n\nconst facebookPageAccessToken =\n  input.facebook_page_access_token ||\n  input.page_access_token ||\n  input.facebook_access_token ||\n  credentials.facebook_page_access_token ||\n  credentials.page_access_token ||\n  credentials.facebook_access_token ||\n  \"\";\n\nif (!facebookPageId) {\n  throw new Error(\"Falta facebook_page_id / page_id\");\n}\n\nif (!facebookPageAccessToken) {\n  throw new Error(\"Falta facebook_page_access_token / page_access_token\");\n}\n\nreturn [\n  {\n    json: {\n      ...input,\n\n      platform: \"facebook\",\n\n      facebook_page_id: facebookPageId,\n      facebook_page_access_token: facebookPageAccessToken,\n\n      image_url: imageUrl,\n      caption,\n\n      has_public_image_url: Boolean(imageUrl),\n\n      facebook_photos_url: `https://graph.facebook.com/v23.0/${facebookPageId}/photos`,\n      facebook_feed_url: `https://graph.facebook.com/v23.0/${facebookPageId}/feed`\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        880
+      ],
+      "id": "34896028-a853-4144-942f-376269b843ba",
+      "name": "preparador facebook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "946eb96f-504e-4127-8a68-aa8f39bd89cf",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "6b69a575-27b0-4bb8-b30d-649d9c860331",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1504,
+        928
+      ],
+      "id": "5e1305ab-0dcc-4716-ab6e-2e01d41c17ad",
+      "name": "existe el image_url publica?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v23.0/{{$json.facebook_page_id}}/photos",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "={{ $json.public_image_url || $json.image_url }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $json.caption }}"
+            },
+            {
+              "name": "=access_token",
+              "value": "={{ $json.instagram_access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1776,
+        864
+      ],
+      "id": "c7f85f46-75f6-4355-bc08-46084c3f1bcb",
+      "name": "publicar con url"
+    },
+    {
+      "parameters": {
+        "url": "={{\n  $('preparador facebook').first().json.image_url ||\n  $('preparador facebook').first().json.image_source_url ||\n  $('preparador facebook').first().json.image_current\n}}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"Mozilla/5.0\",\n  \"Accept\": \"image/jpeg,image/png,image/webp,*/*\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1728,
+        1024
+      ],
+      "id": "30baf8e2-2146-4492-b3b1-512f9717a082",
+      "name": "download image to facebook"
+    },
+    {
+      "parameters": {
+        "url": "={{\n  $('Preparador instagram').first().json.image_url ||\n  $('Preparador instagram').first().json.image_source_url ||\n  $('Preparador instagram').first().json.image_current\n}}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"Mozilla/5.0\",\n  \"Accept\": \"image/jpeg,image/png,image/webp,*/*\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        128,
+        1056
+      ],
+      "id": "cc550529-78ee-4b3a-a9d2-daaa11490757",
+      "name": "download image to Instagram"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v23.0/{{$json.facebook_page_id}}/photos",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "source",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('preparador facebook').first().json.caption }}"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $('preparador facebook').first().json.facebook_page_access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1888,
+        1024
+      ],
+      "id": "35612165-52f8-4fba-8296-bd2ea832d620",
+      "name": "facebook photo (binary)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2064,
+        896
+      ],
+      "id": "2b02b819-1d2b-47da-91a5-8d6e2fe0e3b4",
+      "name": "Merge"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        416,
+        896
+      ],
+      "id": "85eac9d3-7343-4ced-89d9-29fd20002135",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json || {};\n\nconst cleanLinkedIn = (\n  input.content_linkedin ||\n  input.linkedin_text ||\n  input.content_social ||\n  input.content_current ||\n  input.content ||\n  \"\"\n)\n  .replace(/<[^>]*>/g, \" \")\n  .replace(/&nbsp;/g, \" \")\n  .replace(/\\s+/g, \" \")\n  .trim()\n  .substring(0, 3000);\n\nif (!cleanLinkedIn) {\n  throw new Error(\"Falta contenido para LinkedIn\");\n}\n\nconst credentials = input.credentials || {};\n\nconst linkedinAuthor =\n  input.linkedin_author ||\n  input.linkedin_person_urn ||\n  input.linkedin_organization_urn ||\n  credentials.linkedin_author ||\n  credentials.linkedin_person_urn ||\n  credentials.linkedin_organization_urn ||\n  urn:li:person:\"; // example fallback \n\nconst linkedinImageSource =\n  input.linkedin_image_source ||\n  input.image_url ||\n  input.image_source_url ||\n  input.image_current ||\n  input.featured_image_url ||\n  input.media_url ||\n  input.source_url ||\n  \"\";\n\nreturn [\n  {\n    json: {\n      ...input,\n\n      platform: \"linkedin\",\n\n      linkedin_author: linkedinAuthor,\n      linkedin_image_source: linkedinImageSource,\n\n      linkedin_body: {\n        author: linkedinAuthor,\n        commentary: cleanLinkedIn,\n        visibility: \"PUBLIC\",\n        distribution: {\n          feedDistribution: \"MAIN_FEED\"\n        },\n        lifecycleState: \"PUBLISHED\"\n      },\n\n      linkedin_success: true,\n      content_linkedin_length: cleanLinkedIn.length,\n      has_linkedin_image: Boolean(linkedinImageSource)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        128
+      ],
+      "id": "87dbafa8-19ca-4494-9576-43584fd55f15",
+      "name": "Preparador Linkedin1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.linkedin.com/rest/images?action=initializeUpload",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Authorization\": \"Bearer {{$json.linkedin_access_token}}\",\n  \"X-Restli-Protocol-Version\": \"2.0.0\",\n  \"LinkedIn-Version\": \"202604\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"initializeUploadRequest\": {\n    \"owner\": \"urn:li:person:\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1408,
+        96
+      ],
+      "id": "91ca4263-875c-40be-b080-aadd731675db",
+      "name": "linkedin image upload1"
+    },
+    {
+      "parameters": {
+        "content": "## Static mode nodes\n",
+        "height": 208,
+        "width": 1792
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        336
+      ],
+      "id": "20169841-61dc-453a-8b9e-14c009fef447",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Preparador Linkedin').first().json.image_current }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"Mozilla/5.0\",\n  \"Accept\": \"image/jpeg,image/png,image/webp,*/*\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1696,
+        368
+      ],
+      "id": "32f82d97-1301-4fb6-b6e7-3ebf85d46a36",
+      "name": "download image to linkedIn1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/rest/posts",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"X-Restli-Protocol-Version\": \"2.0.0\",\n  \"LinkedIn-Version\": \"202604\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  author: \"urn:li:person:\",\n  commentary: $(\"Preparador Linkedin\").first().json.linkedin_body.commentary,\n  visibility: \"PUBLIC\",\n  distribution: {\n    feedDistribution: \"MAIN_FEED\",\n    targetEntities: [],\n    thirdPartyDistributionChannels: []\n  },\n  content: {\n    media: {\n      id: $(\"linkedin image upload\").first().json.value.image,\n      altText: $(\"Preparador Linkedin\").first().json.title_linkedin || $(\"Preparador Linkedin\").first().json.title_current || \"Imagen del post\"\n    }\n  },\n  lifecycleState: \"PUBLISHED\",\n  isReshareDisabledByAuthor: false\n}\n}}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2240,
+        464
+      ],
+      "id": "c8d93c5c-4963-4fa1-be57-271f8dcc7a72",
+      "name": "LinkedIn Posts1",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f4bbb098-7fa6-4bef-9ee4-f93a3e8282bd",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "c65b9e66-a922-41a6-992c-8786e56b5fce",
+              "name": "session_id",
+              "value": "={{ $('Webhook').item.json.body.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "95ce9e9a-8a10-4e77-8add-640c1f5cd5c4",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "239813f4-8c8f-4c97-840e-780094ee3a71",
+              "name": "wp_post_id",
+              "value": "={{ $('WP Posts estatico').isExecuted ? $('WP Posts estatico').first().json.id : $('Get row(s)').first().json.wp_post_id }}",
+              "type": "string"
+            },
+            {
+              "id": "c28654aa-f02d-4084-880e-0501a4e960ec",
+              "name": "wp_post_url",
+              "value": "={{ $('WP Posts estatico').isExecuted ? $('WP Posts estatico').first().json.link : $('Get row(s)').first().json.wp_post_url }}",
+              "type": "string"
+            },
+            {
+              "id": "3aae6a9c-c1a8-4cf2-858a-19fdca9c1047",
+              "name": "image_current",
+              "value": "={{ $('Get row(s)').item.json.image_current }}",
+              "type": "string"
+            },
+            {
+              "id": "fe3e39e7-0c4f-496d-8866-6adffb48020e",
+              "name": "featured_media_id",
+              "value": "={{ $('Get row(s)').item.json.featured_media_id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1552,
+        -176
+      ],
+      "id": "157fd397-afe4-4c66-84a8-1040579209e7",
+      "name": "Prepare answer"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "content_sessions",
+          "cachedResultUrl": ""
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "session_id",
+              "keyValue": "={{ $('Webhook').item.json.body.session_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $('Webhook').first().json.body.status || $json.status }}",
+            "wp_post_id": "={{ $('WP Posts estatico').isExecuted ? $('WP Posts estatico').first().json.id : $('Get row(s)').first().json.wp_post_id }}",
+            "wp_post_url": "={{ $('WP Posts estatico').isExecuted ? $('WP Posts estatico').first().json.link : $('Get row(s)').first().json.wp_post_url }}",
+            "updated_at": "={{ $now }}",
+            "featured_media_id": "={{ $('Get row(s)').item.json.featured_media_id }}",
+            "featured_media": "={{ $('Get row(s)').item.json.featured_media_id }}",
+            "linkedin_post_id": "={{ $json.linkedin_post_id }}",
+            "linkedin_post_url": "={{ $json.linkedin_post_url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_current",
+              "displayName": "title_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_current",
+              "displayName": "content_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "excerpt_current",
+              "displayName": "excerpt_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "meta_current",
+              "displayName": "meta_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category_current",
+              "displayName": "category_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "image_current",
+              "displayName": "image_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_current",
+              "displayName": "tags_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "text_versions",
+              "displayName": "text_versions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "image_versions",
+              "displayName": "image_versions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "review_action",
+              "displayName": "review_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "wp_post_id",
+              "displayName": "wp_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "wp_post_url",
+              "displayName": "wp_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "featured_media_id",
+              "displayName": "featured_media_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "featured_media",
+              "displayName": "featured_media",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "keyword_current",
+              "displayName": "keyword_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "image_prompt_current",
+              "displayName": "image_prompt_current",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "objetivo",
+              "displayName": "objetivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "publico_objetivo",
+              "displayName": "publico_objetivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "nivel_tecnico",
+              "displayName": "nivel_tecnico",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tono",
+              "displayName": "tono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "formato_texto",
+              "displayName": "formato_texto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "publication_type",
+              "displayName": "publication_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "visual_style",
+              "displayName": "visual_style",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "image_format",
+              "displayName": "image_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "visual_reference",
+              "displayName": "visual_reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "storytelling_format",
+              "displayName": "storytelling_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "viral_format",
+              "displayName": "viral_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "professional_linkedin_format",
+              "displayName": "professional_linkedin_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cta",
+              "displayName": "cta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "custom_cta",
+              "displayName": "custom_cta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cta_intensity",
+              "displayName": "cta_intensity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "generate_image",
+              "displayName": "generate_image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "idioma",
+              "displayName": "idioma",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tamano",
+              "displayName": "tamano",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "custom_category",
+              "displayName": "custom_category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "descripcion",
+              "displayName": "descripcion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_wordpress",
+              "displayName": "title_wordpress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_wordpress",
+              "displayName": "content_wordpress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_wordpress",
+              "displayName": "tags_wordpress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_linkedin",
+              "displayName": "title_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_linkedin",
+              "displayName": "content_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_linkedin",
+              "displayName": "tags_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_x",
+              "displayName": "title_x",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_x",
+              "displayName": "content_x",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_x",
+              "displayName": "tags_x",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_instagram",
+              "displayName": "title_instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_instagram",
+              "displayName": "content_instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_instagram",
+              "displayName": "tags_instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title_facebook",
+              "displayName": "title_facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_facebook",
+              "displayName": "content_facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tags_facebook",
+              "displayName": "tags_facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "linkedin_post_id",
+              "displayName": "linkedin_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "facebook_post_id",
+              "displayName": "facebook_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "instagram_post_id",
+              "displayName": "instagram_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "x_post_id",
+              "displayName": "x_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "linkedin_post_url",
+              "displayName": "linkedin_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "facebook_post_url",
+              "displayName": "facebook_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "instagram_post_url",
+              "displayName": "instagram_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "x_post_url",
+              "displayName": "x_post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        -176
+      ],
+      "id": "adf5649b-da61-425b-af57-a926317e09ac",
+      "name": "Update row(s)2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Preparar publicación multicanal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar publicación multicanal": {
+      "main": [
+        [
+          {
+            "node": "¿Plataformas seleccionadas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Plataformas seleccionadas?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Controlador plataformas seleccionadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Controlador plataformas seleccionadas": {
+      "main": [
+        [
+          {
+            "node": "WP Posts dinamico",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparador Linkedin",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparador X/Twitter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparador instagram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "preparador facebook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "decrypt credentials": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row(s)1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "id": {
+      "main": [
+        [
+          {
+            "node": "decrypt credentials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "linkedin respuesta1": {
+      "main": [
+        []
+      ]
+    },
+    "linkedin respuesta": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn post": {
+      "main": [
+        [
+          {
+            "node": "linkedin respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Posts": {
+      "main": [
+        [
+          {
+            "node": "linkedin respuesta1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "linkedin image upload": {
+      "main": [
+        [
+          {
+            "node": "download image to linkedIn1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "linkedin upload binary": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download image to linkedIn": {
+      "main": [
+        [
+          {
+            "node": "linkedin upload binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download image to X/Twitter": {
+      "main": [
+        [
+          {
+            "node": "upload media X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload media X": {
+      "main": [
+        [
+          {
+            "node": "Preparar body X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twitter/X posts": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparador Linkedin": {
+      "main": [
+        [
+          {
+            "node": "linkedin image upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparador X/Twitter": {
+      "main": [
+        [
+          {
+            "node": "download image to X/Twitter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar body X": {
+      "main": [
+        [
+          {
+            "node": "Twitter/X posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WP Posts dinamico": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WP Posts estatico": {
+      "main": [
+        []
+      ]
+    },
+    "WP Posts estatico/dinamico": {
+      "main": [
+        []
+      ]
+    },
+    "Preparador instagram": {
+      "main": [
+        [
+          {
+            "node": "existe image_url publica?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "existe image_url publica?": {
+      "main": [
+        [
+          {
+            "node": "media container instagram true",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "download image to Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "media container instagram": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "publish media instagram": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload image hosting (cloudinary)": {
+      "main": [
+        [
+          {
+            "node": "Code url cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code url cloudinary": {
+      "main": [
+        [
+          {
+            "node": "media container instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "media container instagram true": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "preparador facebook": {
+      "main": [
+        [
+          {
+            "node": "existe el image_url publica?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "existe el image_url publica?": {
+      "main": [
+        [
+          {
+            "node": "publicar con url",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "download image to facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download image to Instagram": {
+      "main": [
+        [
+          {
+            "node": "upload image hosting (cloudinary)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download image to facebook": {
+      "main": [
+        [
+          {
+            "node": "facebook photo (binary)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "publicar con url": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "facebook photo (binary)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "publish media instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparador Linkedin1": {
+      "main": [
+        [
+          {
+            "node": "linkedin image upload1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "linkedin image upload1": {
+      "main": [
+        [
+          {
+            "node": "download image to linkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download image to linkedIn1": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare answer": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row(s)2": {
+      "main": [
+        [
+          {
+            "node": "Prepare answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "tags": []
+}
